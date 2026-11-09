@@ -6,41 +6,92 @@
 <meta name="theme-color" content="#000000">
 <title>Visor GDL</title>
 <style>
-  :root { --fg: #fff; --bg: rgba(0,0,0,.72); --accent: #ffd54a; --mountain: #9be7a1; }
-  * { box-sizing: border-box; }
-  html, body { margin: 0; height: 100%; background: #111; color: var(--fg); font: 16px/1.35 system-ui, sans-serif; overflow: hidden; }
+  :root {
+    --fg: #fff; --muted: #b9b9b9; --glass: rgba(18,18,18,.78); --line: rgba(255,255,255,.14);
+    --accent: #ffd54a; --mountain: #9be7a1; --zone: #8fd3ff; --ok: #6be38a; --warn: #ffd54a;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; height: 100%; background: #111; color: var(--fg); font: 16px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; overflow: hidden; }
   video, canvas { position: fixed; inset: 0; width: 100%; height: 100%; }
   video { object-fit: cover; }
-  #cross { position: fixed; left: 50%; top: 50%; width: 36px; height: 36px; margin: -18px 0 0 -18px; pointer-events: none;
-           border: 2px solid var(--accent); border-radius: 50%; box-shadow: 0 0 0 1px #000; }
-  #status { position: fixed; top: 0; left: 0; right: 0; padding: max(8px, env(safe-area-inset-top)) 12px 8px;
-            background: var(--bg); font-size: 15px; text-align: center; }
-  #bar { position: fixed; bottom: 0; left: 0; right: 0; display: flex; gap: 8px; justify-content: center;
-         padding: 10px 12px max(10px, env(safe-area-inset-bottom)); background: var(--bg); }
-  button { font: inherit; color: #000; background: var(--accent); border: 0; border-radius: 10px; padding: 12px 18px; min-height: 48px; }
-  button.sec { background: #ddd; }
-  .panel { position: fixed; left: 0; right: 0; bottom: 0; max-height: 75%; overflow: auto; background: #1b1b1b;
-           padding: 16px 16px max(16px, env(safe-area-inset-bottom)); border-radius: 16px 16px 0 0; }
-  .panel h2 { margin: 0 0 8px; font-size: 20px; }
-  .panel p { margin: 0 0 12px; color: #ccc; }
-  .panel ul { list-style: none; margin: 0 0 12px; padding: 0; }
-  .panel li button { width: 100%; text-align: left; background: #2c2c2c; color: #fff; margin-bottom: 6px; }
-  .panel label { display: block; margin-bottom: 14px; }
-  .panel input { font: inherit; width: 100%; padding: 10px; margin-top: 4px; border-radius: 8px; border: 1px solid #555; background: #000; color: #fff; }
-  .panel a { color: var(--accent); }
-  .row { display: flex; gap: 8px; }
-  .row button { flex: 1; }
-  #infoMeta { color: #aaa; font-size: 14px; }
-  #infoText { color: #eee; }
-  #gallery { display: flex; gap: 8px; overflow-x: auto; margin: 0 -16px 12px; padding: 0 16px; scroll-snap-type: x mandatory; }
-  #gallery a { flex: 0 0 auto; scroll-snap-align: start; }
-  #gallery img { display: block; height: 180px; width: auto; max-width: 80vw; object-fit: cover; border-radius: 8px; background: #333; }
-  #infoCredit { font-size: 12px; color: #888; }
-  #start { position: fixed; inset: 0; display: flex; flex-direction: column; justify-content: center; padding: 24px; gap: 16px; background: #111; }
-  #start h1 { margin: 0; }
-  #toast { position: fixed; left: 50%; top: 70px; transform: translateX(-50%); background: var(--bg); padding: 8px 14px; border-radius: 8px; display: none; }
+  button { font: inherit; color: inherit; border: 0; cursor: pointer; }
+  .glass { background: var(--glass); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
+
+  #cross { position: fixed; left: 50%; top: 50%; width: 40px; height: 40px; margin: -20px 0 0 -20px; pointer-events: none;
+           border: 2px solid rgba(255,255,255,.9); border-radius: 50%; box-shadow: 0 0 0 1px rgba(0,0,0,.5), inset 0 0 0 1px rgba(0,0,0,.5); }
+  #cross::after { content: ""; position: absolute; left: 50%; top: 50%; width: 4px; height: 4px; margin: -2px; border-radius: 50%; background: #fff; }
+
+  #top { position: fixed; top: max(10px, env(safe-area-inset-top)); left: 12px; right: 12px; display: flex; gap: 8px; align-items: center; justify-content: center; pointer-events: none; }
+  #status { padding: 7px 14px; border-radius: 999px; font-size: 14px; font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #calBadge { pointer-events: auto; padding: 7px 12px; border-radius: 999px; font-size: 13px; font-weight: 600; color: #000; }
+  #calBadge.warn { background: var(--warn); }
+  #calBadge.ok { background: var(--ok); }
+
+  #banner { position: fixed; top: calc(max(10px, env(safe-area-inset-top)) + 46px); left: 12px; right: 12px; display: flex; gap: 10px; align-items: center;
+            padding: 10px 10px 10px 14px; border-radius: 14px; font-size: 15px; }
+  #banner span { flex: 1; }
+  #banner button { padding: 8px 14px; min-height: 40px; border-radius: 10px; background: #fff; color: #000; font-weight: 600; }
+
+  #tapMark { position: fixed; width: 28px; height: 28px; margin: -14px 0 0 -14px; border: 3px solid var(--accent); border-radius: 50%; pointer-events: none; box-shadow: 0 0 0 2px rgba(0,0,0,.6); }
+
+  #focusCard { position: fixed; left: 12px; right: 12px; bottom: calc(max(12px, env(safe-area-inset-bottom)) + 66px); display: flex; gap: 12px; align-items: center;
+               padding: 8px 14px 8px 8px; border-radius: 16px; text-align: left; min-height: 64px; }
+  #focusCard img { width: 56px; height: 56px; border-radius: 10px; object-fit: cover; background: #333; flex: none; }
+  #focusCard img:not([src]) { display: none; }
+  #focusCard .txt { flex: 1; min-width: 0; }
+  #focusCard b { display: block; font-size: 17px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #focusCard small { color: var(--muted); font-size: 13px; }
+  #focusCard .chev { font-size: 26px; color: var(--muted); }
+
+  #bar { position: fixed; bottom: max(12px, env(safe-area-inset-bottom)); left: 12px; right: 12px; display: flex; gap: 10px; }
+  #bar button { flex: 1; min-height: 52px; border-radius: 14px; font-weight: 600; }
+  #btnCal { background: var(--accent); color: #000; }
+  #btnSet { color: #fff; }
+
+  #backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.45); }
+  .sheet { position: fixed; left: 0; right: 0; bottom: 0; max-height: 86%; overflow: auto; background: #161616; border-radius: 20px 20px 0 0;
+           padding-bottom: max(16px, env(safe-area-inset-bottom)); box-shadow: 0 -8px 30px rgba(0,0,0,.5); }
+  .sheet .body { padding: 18px 18px 0; }
+  .sheet h2 { margin: 0 0 8px; font-size: 22px; line-height: 1.2; }
+  .sheet p { margin: 0 0 14px; color: #ddd; }
+  .sheet ul { list-style: none; margin: 0 0 14px; padding: 0; }
+  .sheet a { color: var(--accent); }
+  .sheet .close { position: absolute; top: 10px; right: 10px; width: 40px; height: 40px; border-radius: 50%; background: rgba(0,0,0,.55); color: #fff; font-size: 18px; z-index: 2; }
+  .sheet .grip { width: 40px; height: 4px; border-radius: 2px; background: #444; margin: 8px auto 0; }
+  .btn { display: block; width: 100%; min-height: 50px; border-radius: 12px; background: #2a2a2a; color: #fff; text-align: left; padding: 0 16px; margin-bottom: 8px; }
+  .btn small { color: var(--muted); margin-left: 6px; }
+  .btn.main { background: var(--accent); color: #000; text-align: center; font-weight: 600; }
+  .btn.plain { text-align: center; }
+
+  #carousel { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; background: #000; }
+  #carousel::-webkit-scrollbar { display: none; }
+  #carousel a { flex: 0 0 100%; scroll-snap-align: center; }
+  #carousel img { display: block; width: 100%; aspect-ratio: 4 / 3; object-fit: cover; }
+  #carousel:empty { display: none; }
+  #dots { display: flex; gap: 6px; justify-content: center; margin-top: 10px; }
+  #dots i { width: 7px; height: 7px; border-radius: 50%; background: #555; }
+  #dots i.on { background: #fff; }
+  #chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+  #chips span { padding: 4px 10px; border-radius: 999px; background: #2a2a2a; font-size: 13px; color: #ddd; }
+  #credits { font-size: 12px; color: #888; margin-bottom: 14px; }
+  #credits a { color: #aaa; }
+  #credits li { margin-bottom: 4px; }
+
+  .sheet label { display: block; margin-bottom: 16px; color: #ddd; }
+  .sheet input[type=number] { font: inherit; width: 100%; padding: 12px; margin-top: 6px; border-radius: 10px; border: 1px solid #444; background: #000; color: #fff; }
+  .sheet input[type=range] { width: 100%; margin-top: 10px; accent-color: var(--accent); }
+
+  #start { position: fixed; inset: 0; display: flex; flex-direction: column; justify-content: center; padding: 28px; gap: 18px; background: radial-gradient(120% 80% at 50% 0%, #2b2a20, #111 60%); }
+  #start h1 { margin: 0; font-size: 34px; }
+  #start ol { margin: 0; padding-left: 22px; color: #ddd; }
+  #start li { margin-bottom: 8px; }
+  #start small { color: var(--muted); }
+  #btnStart { min-height: 56px; border-radius: 14px; background: var(--accent); color: #000; font-weight: 700; font-size: 18px; }
+
+  #toast { position: fixed; left: 50%; top: calc(max(10px, env(safe-area-inset-top)) + 50px); transform: translateX(-50%); width: max-content; max-width: calc(100% - 24px);
+           padding: 10px 16px; border-radius: 12px; display: none; text-align: center; }
   #landscape { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; background: #111; font-size: 20px; padding: 24px; text-align: center; }
-  @media (orientation: landscape) { #landscape { display: flex; } }
+  @media (orientation: landscape) and (max-height: 500px) { #landscape { display: flex; } }
   [hidden] { display: none !important; }
 </style>
 </head>
@@ -48,69 +99,94 @@
 <video id="cam" playsinline muted autoplay></video>
 <canvas id="overlay"></canvas>
 <div id="cross"></div>
-<div id="status" role="status">Esperando GPS…</div>
-<div id="toast" role="alert"></div>
 
-<div id="bar">
-  <button id="btnCal">Calibrar</button>
-  <button id="btnSet" class="sec">Ajustes</button>
+<div id="top">
+  <div id="status" class="glass" role="status">Esperando GPS…</div>
+  <button id="calBadge" class="warn" hidden>Sin calibrar</button>
 </div>
+<div id="banner" class="glass" hidden><span id="bannerText"></span><button id="bannerBtn">Cancelar</button></div>
+<div id="tapMark" hidden></div>
+<div id="toast" class="glass" role="alert"></div>
 
-<section id="infoPanel" class="panel" hidden aria-label="Detalles del lugar">
-  <h2 id="infoName"></h2>
-  <p id="infoMeta"></p>
-  <div id="gallery"></div>
-  <p id="infoText"></p>
-  <p id="infoLink"></p>
-  <p id="infoCredit"></p>
-  <button id="infoClose" class="sec">Cerrar</button>
-</section>
+<button id="focusCard" class="glass" hidden>
+  <img id="focusImg" alt="">
+  <span class="txt"><b id="focusName"></b><small id="focusMeta"></small></span>
+  <span class="chev" aria-hidden="true">›</span>
+</button>
 
-<section id="calPanel" class="panel" hidden aria-label="Calibrar brújula">
-  <h2>Calibrar brújula</h2>
-  <p>Pon la mira amarilla sobre un lugar que conozcas. Sin mover el teléfono, tócalo en la lista.</p>
-  <ul id="calList"></ul>
-  <div class="row">
-    <button id="calReset" class="sec">Borrar calibración</button>
-    <button id="calClose" class="sec">Cerrar</button>
+<nav id="bar">
+  <button id="btnCal">Calibrar</button>
+  <button id="btnSet" class="glass">Ajustes</button>
+</nav>
+
+<div id="backdrop" hidden></div>
+
+<section id="infoPanel" class="sheet" role="dialog" aria-modal="true" aria-labelledby="infoName" hidden>
+  <button class="close" id="infoClose" aria-label="Cerrar">✕</button>
+  <div id="carousel"></div>
+  <div id="dots"></div>
+  <div class="body">
+    <h2 id="infoName"></h2>
+    <div id="chips"></div>
+    <p id="infoText"></p>
+    <p id="infoLink"></p>
+    <ul id="credits"></ul>
   </div>
 </section>
 
-<section id="setPanel" class="panel" hidden aria-label="Ajustes">
-  <h2>Ajustes</h2>
-  <label>Piso en el que estás
-    <input id="inFloor" type="number" min="0" max="100" step="1" inputmode="numeric">
-  </label>
-  <label>Altura del suelo (m sobre el nivel del mar). Se llena sola con el GPS.
-    <input id="inGround" type="number" min="0" max="5000" step="1" inputmode="numeric">
-  </label>
-  <label>Campo de visión de la cámara: <span id="fovOut"></span>°
-    <input id="inFov" type="range" min="35" max="100" step="1">
-  </label>
-  <p>Si las etiquetas se separan más (o menos) que los lugares reales, mueve el campo de visión hasta que coincidan.</p>
-  <button id="setClose" class="sec">Cerrar</button>
+<section id="pickPanel" class="sheet" role="dialog" aria-modal="true" aria-labelledby="pickTitle" hidden>
+  <div class="grip"></div>
+  <div class="body">
+    <h2 id="pickTitle">¿Qué tocaste?</h2>
+    <p>Elige el lugar que está bajo el círculo amarillo.</p>
+    <ul id="pickList"></ul>
+    <button id="pickCancel" class="btn plain">Cancelar</button>
+  </div>
+</section>
+
+<section id="setPanel" class="sheet" role="dialog" aria-modal="true" aria-labelledby="setTitle" hidden>
+  <div class="grip"></div>
+  <div class="body">
+    <h2 id="setTitle">Ajustes</h2>
+    <label>Piso en el que estás
+      <input id="inFloor" type="number" min="0" max="100" step="1" inputmode="numeric">
+    </label>
+    <label>Altura del suelo (m sobre el nivel del mar). Se llena sola con el GPS.
+      <input id="inGround" type="number" min="0" max="5000" step="1" inputmode="numeric">
+    </label>
+    <label>Campo de visión: <b id="fovOut"></b>°. Se ajusta solo al calibrar con dos lugares.
+      <input id="inFov" type="range" min="30" max="110" step="1">
+    </label>
+    <button id="calReset" class="btn plain">Borrar calibración</button>
+    <button id="setClose" class="btn main">Listo</button>
+  </div>
 </section>
 
 <div id="start">
   <h1>Visor GDL</h1>
-  <p>Apunta la cámara al horizonte y verás los nombres de edificios y montañas. Toca un nombre para ver fotos y detalles.</p>
-  <p>Necesita cámara, ubicación, brújula y datos móviles. Funciona mejor en Chrome para Android.</p>
+  <ol>
+    <li>Permite cámara y ubicación.</li>
+    <li>Toca <b>Calibrar</b> y luego toca en la pantalla un lugar que reconozcas. Repite con otro lugar a un lado para afinar.</li>
+    <li>Pon el círculo sobre algo, o toca un nombre, para ver fotos y detalles.</li>
+  </ol>
+  <small>Quita fundas con imán. Funciona mejor en Chrome para Android, en vertical.</small>
   <button id="btnStart">Iniciar</button>
 </div>
 
 <div id="landscape">Gira el teléfono a vertical.</div>
 
 <script type="module">
-import { distBearing, elevAngle, dirVector, cameraBasis, headingPitch, project, smoothBasis, rayMax } from "./geo.js";
+import { distBearing, elevAngle, dirVector, cameraBasis, headingPitch, project, smoothBasis, rayMax, tiltBasis, solveCalibration } from "./geo.js";
 import { loadArea, elevation } from "./terrain.js";
-import { LANDMARKS } from "./landmarks.js";
+import { LANDMARKS, PERFILES } from "./landmarks.js";
 
 const FLOOR_HEIGHT = 3.2;   // m por piso
 const EYE_HEIGHT = 1.6;     // m sobre la azotea
 const DECLINATION = 3.8;    // declinación magnética en GDL (aprox, grados al este). La calibración la corrige.
-const NEAR_ZOOM_M = 40000;  // relieve fino (zoom 10) hasta 40 km, grueso (zoom 8) hasta 135 km
-const FAR_M = 135000;
+const FAR_M = 135000;       // alcance del relieve
 const $ = (id) => document.getElementById(id);
+const wrap = (d) => ((d % 360) + 540) % 360 - 180;
+const DEG = 180 / Math.PI;
 
 // --- Ajustes guardados (pueden fallar en modo incógnito) ---
 const store = {
@@ -118,29 +194,67 @@ const store = {
   set(k, v) { try { localStorage.setItem("visor." + k, JSON.stringify(v)); } catch {} },
 };
 const cfg = {
-  corr: store.get("corr", DECLINATION), // grados a sumar al rumbo magnético para obtener el real
+  corr: store.get("corr", DECLINATION), // grados a sumar al rumbo de la brújula para obtener el real
+  pitch: store.get("pitch", 0),         // corrección de inclinación (grados)
   floor: store.get("floor", 27),
   fov: store.get("fov", 65),            // grados, lado largo de la imagen de la cámara
   ground: store.get("groundManual", null),
 };
 
+let INFO = {}; // textos y fotos de Wikipedia, bajados por tools/fetch_info.py
+fetch("info/info.json").then((r) => (r.ok ? r.json() : {})).then((j) => { INFO = j; focus = null; }).catch(() => {});
+
 let pos = null;        // { lat, lon, acc }
-let absBasis = null;   // orientación con brújula (deviceorientationabsolute)
-let relBasis = null;   // orientación con giroscopio, sin brújula (deviceorientation). Norte arbitrario.
-let gyroCorr = null;   // corrección del giroscopio, fijada al calibrar. Se pierde al recargar.
-let autoCorr = null;   // antes de calibrar: corrección que hace que el giroscopio siga a la brújula
-let basis = null, corr = 0, mode = ""; // lo que se usa en cada cuadro
-const wrap = (d) => ((d % 360) + 540) % 360 - 180;
 let items = [];        // puntos con distancia, rumbo, ángulo vertical y silueta
 let skyline = null;    // [{ az, angle, dist }] cada 0.5°
-let reliefFor = null;  // dónde se cargó el relieve
-let reliefReady = false;
+let reliefFor = null, reliefReady = false, calcFor = null;
 
+// --- Orientación ---
+// La brújula cambia su lectura al inclinar el teléfono (imanes, magnetómetro mal calibrado).
+// El giroscopio no, así que después de calibrar el rumbo sale solo del giroscopio.
+// ponytail: el giroscopio se desvía ~1° cada pocos minutos; hay que volver a calibrar.
+// Mejora posible: corregirlo despacio hacia la brújula cuando el teléfono esté nivelado.
+let absBasis = null;   // con brújula (deviceorientationabsolute)
+let relBasis = null;   // con giroscopio, norte arbitrario (deviceorientation)
+let gyroCorr = null;   // corrección del giroscopio, fijada al calibrar; se pierde al recargar
+let autoCorr = null;   // antes de calibrar: hace que el giroscopio siga a la brújula
+let calibrated = false;
+let basis = null, corr = 0, mode = "";
+let lastSensor = 0;
+
+function onAbsolute(e) {
+  if (e.alpha == null) return;
+  lastSensor = performance.now();
+  absBasis = smoothBasis(absBasis, cameraBasis(e.alpha, e.beta, e.gamma), 0.15);
+}
+function onRelative(e) {
+  if (e.alpha == null) return;
+  if (e.absolute) return onAbsolute(e); // teléfonos sin giroscopio
+  lastSensor = performance.now();
+  relBasis = smoothBasis(relBasis, cameraBasis(e.alpha, e.beta, e.gamma), 0.3);
+}
+function pickView() {
+  if (relBasis && absBasis) {
+    basis = relBasis;
+    if (gyroCorr != null) { corr = gyroCorr; mode = "giroscopio"; return; }
+    const target = headingPitch(absBasis).heading + cfg.corr - headingPitch(relBasis).heading;
+    autoCorr = autoCorr == null ? target : autoCorr + wrap(target - autoCorr) * 0.02;
+    corr = autoCorr; mode = "brújula";
+  } else if (absBasis) {
+    basis = absBasis; corr = cfg.corr; mode = "brújula";
+  }
+}
+
+// --- Relieve y cálculos por posición ---
 const viewerAlt = () => (cfg.ground ?? 1560) + cfg.floor * FLOOR_HEIGHT + EYE_HEIGHT;
+// Relieve fino cerca, grueso lejos: zoom 10 (~150 m) hasta 40 km, 9 (~300 m) hasta 80 km, 8 (~600 m) después.
 const sample = (lat, lon, d) => {
-  const e = d < NEAR_ZOOM_M ? elevation(lat, lon, 10) : NaN;
+  let e = NaN;
+  if (d < 40000) e = elevation(lat, lon, 10);
+  if (Number.isNaN(e) && d < 80000) e = elevation(lat, lon, 9);
   return Number.isNaN(e) ? elevation(lat, lon, 8) : e;
 };
+const skylineAt = (az) => skyline ? skyline[Math.round((((az % 360) + 360) % 360) * 2) % skyline.length].angle : 0;
 
 function recompute() {
   if (!pos) return;
@@ -152,32 +266,36 @@ function recompute() {
   items = LANDMARKS.map((l) => {
     const { dist, bearing } = distBearing(pos.lat, pos.lon, l.lat, l.lon);
     const it = { ...l, dist, bearing, el: elevAngle(h0, l.alt, dist) };
-    if (reliefReady) {
+    if (reliefReady && dist <= FAR_M) {
       // Oculto si el relieve entre tú y el punto sube más que su punta.
       it.hidden = rayMax(sample, pos.lat, pos.lon, h0, bearing, 500, dist * 0.95).angle > it.el + 0.3;
-      if (l.tipo === "m" && !it.hidden) it.ridge = ridgeOf(it);
+      if (l.tipo === "m" && !it.hidden) it.ridge = ridgeOf(it, h0);
     }
+    // Zonas que no se ven: la etiqueta va sobre el horizonte, apuntando hacia ellas.
+    if (l.tipo === "z" && (dist > FAR_M || it.hidden)) { it.onHorizon = true; it.hidden = false; it.el = skylineAt(bearing); }
     return it;
   }).filter((l) => l.dist > 150);
 }
 
-// Tramo del horizonte alrededor de la cumbre que pertenece a esa montaña:
-// se extiende mientras el horizonte esté a una distancia parecida (±30%), hasta ±8°.
-function ridgeOf(l) {
-  const n = skyline.length, i0 = Math.round(l.bearing * 2) % n;
-  const same = (i) => Math.abs(skyline[(i + n) % n].dist - l.dist) < l.dist * 0.3;
-  let a = i0, b = i0;
-  while (b - i0 < 16 && same(b + 1)) b++;
-  while (i0 - a < 16 && same(a - 1)) a--;
+// Silueta de una montaña: horizonte cada 0.1° alrededor de la cumbre, mientras esté
+// a una distancia parecida a la cumbre (±30%), hasta ±8°.
+function ridgeOf(l, h0) {
   const pts = [];
-  for (let i = a; i <= b; i++) pts.push(skyline[(i + n) % n]);
-  return pts.length > 1 ? pts : null;
+  for (let i = -80; i <= 80; i++) {
+    const az = l.bearing + i / 10;
+    pts.push({ az, ...rayMax(sample, pos.lat, pos.lon, h0, az, 500, Math.min(FAR_M, l.dist * 1.4)) });
+  }
+  const same = (i) => i >= 0 && i < pts.length && Math.abs(pts[i].dist - l.dist) < l.dist * 0.3;
+  let a = 80, b = 80;
+  while (same(b + 1)) b++;
+  while (same(a - 1)) a--;
+  return b - a >= 4 ? pts.slice(a, b + 1) : null;
 }
 
 async function loadRelief(lat, lon) {
   reliefFor = { lat, lon };
   reliefReady = false;
-  await Promise.all([loadArea(lat, lon, 200, 12), loadArea(lat, lon, NEAR_ZOOM_M, 10), loadArea(lat, lon, FAR_M, 8)]);
+  await Promise.all([loadArea(lat, lon, 200, 12), loadArea(lat, lon, 40000, 10), loadArea(lat, lon, 80000, 9), loadArea(lat, lon, FAR_M, 8)]);
   const g = elevation(lat, lon, 12);
   if (store.get("groundManual", null) == null && Number.isFinite(g)) { cfg.ground = Math.round(g); $("inGround").value = cfg.ground; }
   if (!Number.isFinite(g)) toast("No se pudo cargar el relieve. Revisa tus datos móviles.");
@@ -192,38 +310,8 @@ function onPosition(p) {
   // El horizonte cuesta ~0.2 s; solo se recalcula si te moviste más de 30 m.
   if (!calcFor || distBearing(calcFor.lat, calcFor.lon, pos.lat, pos.lon).dist > 30) { calcFor = pos; recompute(); }
 }
-let calcFor = null;
 
-let lastSensor = 0;
-function onAbsolute(e) {
-  if (e.alpha == null) return;
-  lastSensor = performance.now();
-  absBasis = smoothBasis(absBasis, cameraBasis(e.alpha, e.beta, e.gamma), 0.15);
-}
-function onRelative(e) {
-  if (e.alpha == null) return;
-  if (e.absolute) return onAbsolute(e); // teléfonos sin giroscopio
-  lastSensor = performance.now();
-  relBasis = smoothBasis(relBasis, cameraBasis(e.alpha, e.beta, e.gamma), 0.3);
-}
-
-// La brújula cambia su lectura al inclinar el teléfono (imanes de la funda, magnetómetro mal calibrado).
-// El giroscopio no, así que después de calibrar el rumbo sale solo del giroscopio.
-// ponytail: el giroscopio se desvía ~1° cada pocos minutos; hay que volver a calibrar.
-// Mejora posible: corregirlo despacio hacia la brújula cuando el teléfono esté nivelado.
-function pickView() {
-  if (relBasis && absBasis) {
-    basis = relBasis;
-    if (gyroCorr != null) { corr = gyroCorr; mode = "giroscopio"; return; }
-    const target = headingPitch(absBasis).heading + cfg.corr - headingPitch(relBasis).heading;
-    autoCorr = autoCorr == null ? target : autoCorr + wrap(target - autoCorr) * 0.02;
-    corr = autoCorr; mode = "brújula";
-  } else if (absBasis) {
-    basis = absBasis; corr = cfg.corr; mode = "brújula";
-  }
-}
-
-// --- Dibujo ---
+// --- Cámara y proyección ---
 const cv = $("overlay"), ctx = cv.getContext("2d"), video = $("cam");
 function resize() {
   const dpr = devicePixelRatio || 1;
@@ -232,46 +320,90 @@ function resize() {
 }
 addEventListener("resize", resize); resize();
 
-// Distancia focal en píxeles CSS, según el campo de visión y el recorte "cover" del video.
-function focal() {
+// f = K / tan(fov/2), donde K es medio lado largo del video, escalado como "cover" a la pantalla.
+function focalK() {
   const W = innerWidth, H = innerHeight;
   const vw = video.videoWidth || W, vh = video.videoHeight || H;
-  const fVid = Math.max(vw, vh) / 2 / Math.tan((cfg.fov * Math.PI) / 360);
-  return fVid * Math.max(W / vw, H / vh);
+  return (Math.max(vw, vh) / 2) * Math.max(W / vw, H / vh);
 }
+const focal = () => focalK() / Math.tan(cfg.fov / 2 / DEG);
+const fovFromF = (f) => 2 * Math.atan(focalK() / f) * DEG;
 
 const CARD = ["N", "NE", "E", "SE", "S", "SO", "O", "NO"];
-const card = (az) => CARD[Math.round(az / 45) % 8];
-const fmtKm = (m) => (m < 10000 ? (m / 1000).toFixed(1) : Math.round(m / 1000)) + " km";
-let hits = []; // rectángulos de etiquetas para detectar toques
+const card = (az) => CARD[Math.round((((az % 360) + 360) % 360) / 45) % 8];
+const fmtDist = (m) => m < 10000 ? (m / 1000).toFixed(1) + " km" : Math.round(m / 1000).toLocaleString("es-MX") + " km";
+const COLOR = { m: "#9be7a1", e: "#ffd54a", z: "#8fd3ff" };
+const TIPO = { m: "Montaña", e: "Edificio", z: "Zona" };
 
-// Polilínea de puntos del horizonte; se corta donde no hay punto visible.
-function strokeLine(pts, f, cx, cy, color, width) {
-  ctx.beginPath();
-  let pen = false;
-  for (const s of pts) {
-    const p = s && project(dirVector(s.az - corr, s.angle), basis, f, cx, cy);
-    if (!p) { pen = false; continue; }
-    pen ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y);
-    pen = true;
-  }
-  ctx.lineJoin = "round";
-  ctx.strokeStyle = "rgba(0,0,0,.6)"; ctx.lineWidth = width + 2; ctx.stroke();
-  ctx.strokeStyle = color; ctx.lineWidth = width; ctx.stroke();
+// --- Dibujo ---
+let view = null; // { b, f, cx, cy } del último cuadro
+let hits = [];   // rectángulos de etiquetas para detectar toques
+let focus = null;
+
+const P = (az, el) => project(dirVector(az - corr, el), view.b, view.f, view.cx, view.cy);
+
+function outline(path, fill, color, width) {
+  if (fill) { ctx.fillStyle = fill; ctx.fill(path); }
+  ctx.lineJoin = "round"; ctx.lineCap = "round";
+  ctx.strokeStyle = "rgba(0,0,0,.65)"; ctx.lineWidth = width + 2.5; ctx.stroke(path);
+  ctx.strokeStyle = color; ctx.lineWidth = width; ctx.stroke(path);
 }
 
-// Contorno de un edificio: rectángulo de su ancho y alto reales, del suelo a la punta.
-function strokeBuilding(l, f, cx, cy) {
-  const half = (Math.atan2(l.w / 2, l.dist) * 180) / Math.PI;
-  const base = elevAngle(viewerAlt(), l.alt - l.h, l.dist);
-  const corners = [[-half, base], [-half, l.el], [half, l.el], [half, base]]
-    .map(([da, el]) => project(dirVector(l.bearing - corr + da, el), basis, f, cx, cy));
-  if (corners.some((p) => !p)) return;
+function drawSkyline() {
+  const path = new Path2D();
+  let pen = false;
+  for (const s of [...skyline, skyline[0]]) {
+    const p = s.dist > 1500 && P(s.az, s.angle); // se omite el suelo cercano
+    if (!p) { pen = false; continue; }
+    pen ? path.lineTo(p.x, p.y) : path.moveTo(p.x, p.y);
+    pen = true;
+  }
+  outline(path, null, "rgba(255,255,255,.5)", 1.2);
+}
+
+// Montaña: cresta verde gruesa y relleno que se desvanece hacia abajo.
+function drawRidge(pts) {
+  const proj = pts.map((s) => P(s.az, s.angle));
+  if (proj.some((p) => !p)) return;
+  const low = Math.min(...pts.map((s) => s.angle)) - 0.8;
+  const bl = P(pts[0].az, low), br = P(pts.at(-1).az, low);
+  if (!bl || !br) return;
+  const fill = new Path2D(), line = new Path2D();
+  proj.forEach((p, i) => { (i ? fill.lineTo(p.x, p.y) : fill.moveTo(p.x, p.y)); (i ? line.lineTo(p.x, p.y) : line.moveTo(p.x, p.y)); });
+  fill.lineTo(br.x, br.y); fill.lineTo(bl.x, bl.y); fill.closePath();
+  const top = Math.min(...proj.map((p) => p.y)), bottom = Math.max(bl.y, br.y);
+  const g = ctx.createLinearGradient(0, top, 0, bottom);
+  g.addColorStop(0, "rgba(155,231,161,.42)"); g.addColorStop(1, "rgba(155,231,161,0)");
+  ctx.fillStyle = g; ctx.fill(fill);
+  outline(line, null, "#9be7a1", 3);
+}
+
+// Edificio: su perfil (ver PERFILES) escalado a su alto y ancho reales, desde el suelo.
+function drawBuilding(l, h0) {
+  const shape = PERFILES[l.perfil] || PERFILES.bloque;
+  const base = l.alt - l.h;
+  const pt = ([nx, ny]) => P(l.bearing + Math.atan2(nx * l.w, l.dist) * DEG, elevAngle(h0, base + ny * l.h, l.dist));
+  const poly = shape.poly.map(pt);
+  if (poly.some((p) => !p)) return;
+  const path = new Path2D();
+  poly.forEach((p, i) => (i ? path.lineTo(p.x, p.y) : path.moveTo(p.x, p.y)));
+  path.closePath();
+  outline(path, "rgba(255,213,74,.22)", "#ffd54a", 1.8);
+  for (const [a, b] of shape.lines || []) {
+    const pa = pt(a), pb = pt(b);
+    if (!pa || !pb) continue;
+    const ln = new Path2D(); ln.moveTo(pa.x, pa.y); ln.lineTo(pb.x, pb.y);
+    outline(ln, null, "#ffd54a", 1);
+  }
+}
+
+function drawIcon(tipo, x, y, color) {
+  ctx.fillStyle = color;
   ctx.beginPath();
-  corners.forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)));
-  ctx.closePath();
-  ctx.fillStyle = "rgba(255,213,74,.15)"; ctx.fill();
-  ctx.strokeStyle = "#ffd54a"; ctx.lineWidth = 1.5; ctx.stroke();
+  if (tipo === "m") { ctx.moveTo(x, y - 5); ctx.lineTo(x + 5.5, y + 4); ctx.lineTo(x - 5.5, y + 4); ctx.closePath(); }
+  else if (tipo === "e") ctx.rect(x - 4, y - 5, 8, 10);
+  else ctx.arc(x, y, 4.5, 0, 7);
+  ctx.fill();
 }
 
 function draw() {
@@ -287,140 +419,230 @@ function draw() {
   const { heading } = headingPitch(basis);
   const trueHeading = (heading + corr + 360) % 360;
   $("status").textContent = !pos ? "Esperando GPS…"
-    : `${Math.round(trueHeading)}° ${card(trueHeading)} · ${Math.round(viewerAlt())} msnm · GPS ±${Math.round(pos.acc)} m · ${mode}` + (reliefReady ? "" : " · cargando relieve…");
+    : `${Math.round(trueHeading)}° ${card(trueHeading)} · ${Math.round(viewerAlt())} m · ±${Math.round(pos.acc)} m` + (reliefReady ? "" : " · cargando relieve…");
+  $("calBadge").hidden = false;
+  $("calBadge").textContent = calibrated ? "Calibrado" : "Sin calibrar";
+  $("calBadge").className = calibrated ? "ok" : "warn";
   if (!pos) return;
 
-  const f = focal(), cx = W / 2, cy = H / 2;
-
-  // Horizonte completo (blanco) y silueta de cada montaña (verde). Se omite el suelo cercano.
-  if (skyline) {
-    const far = skyline.map((s) => (s.dist > 1500 ? s : null));
-    strokeLine([...far, far[0]], f, cx, cy, "rgba(255,255,255,.55)", 1.2);
-  }
+  const h0 = viewerAlt();
+  view = { b: tiltBasis(basis, cfg.pitch), f: focal(), cx: W / 2, cy: H / 2 };
+  if (skyline) drawSkyline();
 
   const shown = [];
   for (const l of items) {
-    const p = project(dirVector(l.bearing - corr, l.el), basis, f, cx, cy);
+    const p = P(l.bearing, l.el);
     if (!p || p.x < -40 || p.x > W + 40) continue;
     if (!l.hidden) {
-      if (l.ridge) strokeLine(l.ridge, f, cx, cy, "#9be7a1", 3);
-      if (l.tipo === "e") strokeBuilding(l, f, cx, cy);
+      if (l.ridge) drawRidge(l.ridge);
+      if (l.tipo === "e") drawBuilding(l, h0);
     }
     shown.push({ l, p });
   }
 
-  // Etiquetas en filas para que no se encimen. Las más cercanas al centro van abajo.
-  ctx.font = "600 15px system-ui, sans-serif";
-  ctx.textBaseline = "middle";
-  shown.sort((a, b) => Math.abs(a.p.x - cx) - Math.abs(b.p.x - cx));
-  const placed = [];
+  // Lo que está bajo el círculo central: el más cercano a la mira, hasta 55 px.
+  let best = null, bestD = 55;
   for (const s of shown) {
-    const text = `${s.l.nombre} · ${fmtKm(s.l.dist)}${s.l.hidden ? " · oculto" : ""}`;
-    const w = ctx.measureText(text).width + 16;
+    const d = Math.hypot(s.p.x - view.cx, (s.p.y - view.cy) / 3);
+    if (!s.l.hidden && d < bestD) { best = s.l; bestD = d; }
+  }
+  setFocus(best);
+
+  // Etiquetas: las más cercanas al centro se colocan primero y suben si chocan con otra.
+  shown.sort((a, b) => Math.abs(a.p.x - view.cx) - Math.abs(b.p.x - view.cx));
+  const placed = [], labels = [];
+  for (const s of shown) {
+    const l = s.l, isFocus = focus && l.nombre === focus.nombre;
+    const name = (l.onHorizon ? "→ " : "") + l.nombre, dist = fmtDist(l.dist) + (l.hidden ? " · oculto" : "");
+    ctx.font = "600 15px system-ui, sans-serif";
+    const wName = ctx.measureText(name).width;
+    ctx.font = "400 13px system-ui, sans-serif";
+    const wDist = ctx.measureText(dist).width;
+    const w = 26 + wName + 7 + wDist + 12;
     const x0 = Math.min(Math.max(s.p.x - w / 2, 4), W - w - 4);
-    const ay = Math.min(Math.max(s.p.y, 90), H - 90);
-    // Sube la etiqueta de 30 en 30 px hasta que no choque con otra.
-    let ly = ay - 34;
-    while (ly > 60 && placed.some(([a, b, y]) => x0 < b + 4 && x0 + w > a - 4 && Math.abs(ly - y) < 28)) ly -= 30;
+    const ay = Math.min(Math.max(s.p.y, 100), H - 170);
+    let ly = ay - 36;
+    while (ly > 70 && placed.some(([a, b, y]) => x0 < b + 4 && x0 + w > a - 4 && Math.abs(ly - y) < 30)) ly -= 32;
     placed.push([x0, x0 + w, ly]);
-    const color = s.l.tipo === "m" ? "#9be7a1" : "#ffd54a";
-
-    ctx.globalAlpha = s.l.hidden ? 0.5 : 1;
-    ctx.strokeStyle = color; ctx.lineWidth = 1.5;
-    ctx.beginPath(); ctx.moveTo(s.p.x, ay); ctx.lineTo(s.p.x, ly + 12); ctx.stroke();
-    ctx.fillStyle = color;
-    ctx.beginPath(); ctx.arc(s.p.x, ay, 4, 0, 7); ctx.fill();
-    ctx.fillStyle = "rgba(0,0,0,.72)";
-    ctx.beginPath(); ctx.roundRect(x0, ly - 12, w, 24, 6); ctx.fill();
-    ctx.fillStyle = color;
-    ctx.fillText(text, x0 + 8, ly);
+    labels.push({ l, isFocus, name, dist, wName, w, x0, ay, ly, px: s.p.x });
+  }
+  // Primero todas las líneas, luego las etiquetas encima, para que ninguna línea cruce un texto.
+  for (const { l, ay, ly, px } of labels) {
+    ctx.globalAlpha = l.hidden ? 0.5 : 1;
+    ctx.strokeStyle = COLOR[l.tipo]; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(px, ay); ctx.lineTo(px, ly + 13); ctx.stroke();
+    ctx.fillStyle = COLOR[l.tipo]; ctx.beginPath(); ctx.arc(px, ay, 3.5, 0, 7); ctx.fill();
+  }
+  for (const { l, isFocus, name, dist, wName, w, x0, ly } of labels) {
+    const color = COLOR[l.tipo];
+    ctx.globalAlpha = l.hidden ? 0.5 : 1;
+    ctx.fillStyle = isFocus ? "#fff" : "rgba(15,15,15,.82)";
+    ctx.beginPath(); ctx.roundRect(x0, ly - 14, w, 28, 14); ctx.fill();
+    drawIcon(l.tipo, x0 + 15, ly, isFocus ? "#000" : color);
+    ctx.textBaseline = "middle";
+    ctx.font = "600 15px system-ui, sans-serif"; ctx.fillStyle = isFocus ? "#000" : "#fff";
+    ctx.fillText(name, x0 + 26, ly);
+    ctx.font = "400 13px system-ui, sans-serif"; ctx.fillStyle = isFocus ? "#444" : "#bbb";
+    ctx.fillText(dist, x0 + 26 + wName + 7, ly + 1);
     ctx.globalAlpha = 1;
-    hits.push({ l: s.l, x0: x0 - 4, x1: x0 + w + 4, y0: ly - 18, y1: ly + 18 });
+    hits.push({ l, x0: x0 - 6, x1: x0 + w + 6, y0: ly - 22, y1: ly + 22 });
   }
 }
 
-// --- Detalles (Wikipedia en español) ---
-const wikiCache = new Map();
-function wiki(title) {
-  if (!wikiCache.has(title)) {
-    const t = encodeURIComponent(title.replaceAll(" ", "_"));
-    const get = (path) => fetch(`https://es.wikipedia.org/api/rest_v1/page/${path}/${t}`).then((r) => (r.ok ? r.json() : null));
-    wikiCache.set(title, Promise.all([get("summary"), get("media-list")])
-      .then(([s, m]) => ({ s, m }))
-      .catch(() => { wikiCache.delete(title); return null; }));
-  }
-  return wikiCache.get(title);
+// --- Tarjeta de lo que está en la mira ---
+function setFocus(l) {
+  if ((l && l.nombre) === (focus && focus.nombre)) { if (l) focus = l; return; }
+  focus = l;
+  const busy = calMode || !$("infoPanel").hidden || !$("pickPanel").hidden || !$("setPanel").hidden;
+  $("focusCard").hidden = !l || busy;
+  if (!l) return;
+  $("focusName").textContent = l.nombre;
+  $("focusMeta").textContent = `${fmtDist(l.dist)} al ${card(l.bearing)} · Ver fotos y detalles`;
+  const img = INFO[l.nombre]?.fotos?.[0]?.src;
+  img ? $("focusImg").setAttribute("src", img) : $("focusImg").removeAttribute("src");
 }
+$("focusCard").onclick = () => focus && openInfo(focus);
 
-const absUrl = (u) => (u.startsWith("//") ? "https:" + u : u);
-let infoFor = null;
+// --- Hojas (paneles inferiores) ---
+function openSheet(id) {
+  for (const s of ["infoPanel", "pickPanel", "setPanel"]) $(s).hidden = s !== id;
+  $("backdrop").hidden = false;
+  $("focusCard").hidden = true;
+}
+function closeSheets() {
+  for (const s of ["infoPanel", "pickPanel", "setPanel"]) $(s).hidden = true;
+  $("backdrop").hidden = true;
+  focus = null; // la tarjeta vuelve a aparecer en el siguiente cuadro
+}
+$("backdrop").onclick = () => { if (!$("pickPanel").hidden) cancelPick(); else closeSheets(); };
+addEventListener("keydown", (e) => e.key === "Escape" && closeSheets());
 
-async function openInfo(l) {
-  infoFor = l;
+// --- Detalles ---
+function openInfo(l) {
+  const d = INFO[l.nombre];
   $("infoName").textContent = l.nombre;
-  $("infoMeta").textContent = `${l.tipo === "m" ? "Montaña" : "Edificio"} · ${Math.round(l.alt).toLocaleString("es-MX")} msnm · ${fmtKm(l.dist)} al ${card(l.bearing)}`;
-  $("gallery").replaceChildren();
-  $("infoText").textContent = l.wiki ? "Cargando…" : "";
-  $("infoCredit").textContent = "";
-  const link = document.createElement("a");
-  link.target = "_blank"; link.rel = "noopener";
-  link.href = l.wiki ? `https://es.wikipedia.org/wiki/${encodeURIComponent(l.wiki.replaceAll(" ", "_"))}`
-                     : `https://es.wikipedia.org/w/index.php?search=${encodeURIComponent(l.nombre + " Jalisco")}`;
-  link.textContent = l.wiki ? "Leer más en Wikipedia" : "Buscar en Wikipedia";
-  $("infoLink").replaceChildren(link);
-  $("infoPanel").hidden = false;
-  if (!l.wiki) return;
+  const chips = [TIPO[l.tipo], fmtDist(l.dist) + " al " + card(l.bearing)];
+  if (l.tipo !== "z") chips.push(Math.round(l.alt).toLocaleString("es-MX") + " msnm");
+  if (l.hidden) chips.push("Oculto por el relieve");
+  if (l.onHorizon) chips.push("No se ve desde aquí; la flecha marca la dirección");
+  $("chips").replaceChildren(...chips.map((t) => Object.assign(document.createElement("span"), { textContent: t })));
 
-  const data = await wiki(l.wiki);
-  if (infoFor !== l) return; // el usuario ya abrió otro
-  if (!data?.s) { $("infoText").textContent = "No se pudo cargar la información. Revisa tus datos móviles."; return; }
-  $("infoText").textContent = data.s.extract || "";
-  const imgs = (data.m?.items || []).filter((i) => i.type === "image" && i.showInGallery && i.srcset?.length).slice(0, 8);
-  if (!imgs.length && data.s.thumbnail) imgs.push({ srcset: [{ src: data.s.thumbnail.source }], caption: null });
-  for (const i of imgs) {
-    const a = document.createElement("a"), img = document.createElement("img");
-    a.href = absUrl(i.srcset.at(-1).src); a.target = "_blank"; a.rel = "noopener";
-    img.src = absUrl(i.srcset[0].src); img.loading = "lazy";
-    img.alt = i.caption?.text || l.nombre;
-    a.append(img); $("gallery").append(a);
+  const fotos = d?.fotos || [];
+  $("carousel").replaceChildren(...fotos.map((f, i) => {
+    const a = Object.assign(document.createElement("a"), { href: f.fuente, target: "_blank", rel: "noopener" });
+    a.append(Object.assign(document.createElement("img"), { src: f.src, alt: `${l.nombre}, foto ${i + 1}`, loading: i ? "lazy" : "eager" }));
+    return a;
+  }));
+  $("dots").replaceChildren(...(fotos.length > 1 ? fotos.map((_, i) => Object.assign(document.createElement("i"), { className: i ? "" : "on" })) : []));
+  $("carousel").scrollLeft = 0;
+
+  $("infoText").textContent = d?.texto || "Sin descripción todavía.";
+  const link = Object.assign(document.createElement("a"), { target: "_blank", rel: "noopener" });
+  link.href = d?.url || `https://es.m.wikipedia.org/w/index.php?search=${encodeURIComponent(l.nombre + " Jalisco")}`;
+  link.textContent = d?.url ? "Leer más en Wikipedia" : "Buscar en Wikipedia";
+  $("infoLink").replaceChildren(link);
+  $("credits").replaceChildren(...fotos.map((f, i) => {
+    const li = document.createElement("li");
+    li.append(`Foto ${i + 1}: ${f.autor}${f.licencia ? ", " + f.licencia : ""} · `,
+      Object.assign(document.createElement("a"), { href: f.fuente, target: "_blank", rel: "noopener", textContent: "Wikimedia Commons" }));
+    return li;
+  }));
+  if (d) $("credits").append(Object.assign(document.createElement("li"), { textContent: "Texto: Wikipedia, CC BY-SA 4.0." }));
+  openSheet("infoPanel");
+  $("infoClose").focus();
+}
+$("carousel").addEventListener("scroll", (e) => {
+  const i = Math.round(e.target.scrollLeft / e.target.clientWidth);
+  [...$("dots").children].forEach((d, k) => (d.className = k === i ? "on" : ""));
+});
+$("infoClose").onclick = closeSheets;
+
+// --- Calibración: toca en pantalla un lugar conocido y di cuál es ---
+let calMode = false, calPoints = [], pending = null;
+
+function startCal() {
+  if (!pos || !basis) { toast("Espera a tener GPS y brújula."); return; }
+  calMode = true; calPoints = [];
+  $("focusCard").hidden = true;
+  banner("Toca en la pantalla, justo encima, un lugar que reconozcas.", "Cancelar");
+}
+function endCal() { calMode = false; pending = null; $("banner").hidden = true; $("tapMark").hidden = true; focus = null; }
+function banner(text, btn) { $("bannerText").textContent = text; $("bannerBtn").textContent = btn; $("banner").hidden = false; }
+$("bannerBtn").onclick = endCal;
+$("btnCal").onclick = startCal;
+$("calBadge").onclick = startCal;
+
+function calTap(x, y) {
+  const { b, f, cx, cy } = view;
+  const u = x - cx, v = cy - y;
+  const ray = b.fwd.map((k, i) => k + (b.right[i] * u) / f + (b.up[i] * v) / f);
+  const len = Math.hypot(...ray);
+  // Candidatos: los lugares más cercanos a donde tocaste, según la calibración actual.
+  const near = items.filter((l) => !l.onHorizon).map((l) => {
+    const d = dirVector(l.bearing - corr, l.el);
+    return { l, ang: Math.acos(Math.min(1, (d[0] * ray[0] + d[1] * ray[1] + d[2] * ray[2]) / len)) };
+  }).sort((a, b) => a.ang - b.ang).slice(0, 6);
+  pending = { basis: { ...basis }, u, v, kind: basis === relBasis ? "rel" : "abs" };
+  Object.assign($("tapMark").style, { left: x + "px", top: y + "px" });
+  $("tapMark").hidden = false;
+  $("pickList").replaceChildren(...near.map(({ l }) => {
+    const li = document.createElement("li");
+    const btn = Object.assign(document.createElement("button"), { className: "btn" });
+    btn.append(l.nombre, Object.assign(document.createElement("small"), { textContent: fmtDist(l.dist) }));
+    btn.onclick = () => calPick(l);
+    li.append(btn);
+    return li;
+  }));
+  openSheet("pickPanel");
+}
+function cancelPick() { pending = null; $("tapMark").hidden = true; closeSheets(); }
+$("pickCancel").onclick = cancelPick;
+
+function calPick(l) {
+  closeSheets();
+  $("tapMark").hidden = true;
+  const now = Date.now();
+  // Solo se combinan toques recientes hechos con el mismo sensor.
+  const pts = [...calPoints.filter((p) => p.kind === pending.kind && now - p.t < 180000).slice(-2),
+    { ...pending, bearing: l.bearing, el: l.el, t: now, nombre: l.nombre }];
+  const spread = Math.max(...pts.map((a) => Math.max(...pts.map((b) => Math.abs(wrap(a.bearing - b.bearing))))));
+  const fitF = pts.length >= 2 && spread >= 10;
+  const s = solveCalibration(pts, { corr, pitch: cfg.pitch, f: focal() }, fitF);
+  const fov = fitF ? fovFromF(s.f) : cfg.fov;
+  if (!Number.isFinite(s.corr) || Math.abs(s.pitch) > 10 || fov < 30 || fov > 110) {
+    toast("Ese toque no cuadra con los anteriores. Intenta otra vez.");
+    calPoints = []; pending = null;
+    return;
   }
-  $("infoCredit").textContent = "Texto e imágenes: Wikipedia y Wikimedia Commons (CC BY-SA).";
+  if (pending.kind === "rel") {
+    gyroCorr = s.corr;
+    if (absBasis) cfg.corr = wrap(headingPitch(relBasis).heading + gyroCorr - headingPitch(absBasis).heading);
+  } else cfg.corr = s.corr;
+  store.set("corr", cfg.corr);
+  cfg.pitch = s.pitch; store.set("pitch", cfg.pitch);
+  if (fitF) { cfg.fov = Math.round(fov * 10) / 10; store.set("fov", cfg.fov); syncFov(); }
+  calibrated = true;
+  calPoints = pts; pending = null;
+  if (fitF) { endCal(); toast("Calibración completa. Si se mueve con el tiempo, vuelve a calibrar."); }
+  else banner(`Listo con ${l.nombre}. Para afinar el zoom, toca otro lugar lejos de este, hacia un lado.`, "Terminar");
 }
 
 cv.addEventListener("click", (e) => {
+  if (!view) return;
+  if (calMode) return calTap(e.clientX, e.clientY);
   const h = hits.find((h) => e.clientX >= h.x0 && e.clientX <= h.x1 && e.clientY >= h.y0 && e.clientY <= h.y1);
   if (h) openInfo(h.l);
 });
-$("infoClose").onclick = () => { $("infoPanel").hidden = true; infoFor = null; };
-
-// --- Calibración ---
-function openCal() {
-  const list = $("calList"); list.innerHTML = "";
-  if (!pos || !basis) { toast("Espera a tener GPS y brújula."); return; }
-  for (const l of [...items].sort((a, b) => a.dist - b.dist)) {
-    const li = document.createElement("li"), b = document.createElement("button");
-    b.textContent = `${l.nombre} · ${fmtKm(l.dist)}`;
-    b.onclick = () => {
-      // Fija el giroscopio y guarda también la corrección de la brújula para la próxima vez.
-      if (relBasis) gyroCorr = wrap(l.bearing - headingPitch(relBasis).heading);
-      if (absBasis) { cfg.corr = wrap(l.bearing - headingPitch(absBasis).heading); store.set("corr", cfg.corr); }
-      $("calPanel").hidden = true;
-      toast(relBasis ? `Calibrado con ${l.nombre}. Ahora usa el giroscopio.` : `Calibrado con ${l.nombre}`);
-    };
-    li.append(b); list.append(li);
-  }
-  $("calPanel").hidden = false;
-}
 
 let toastTimer;
 function toast(msg) {
   const t = $("toast"); t.textContent = msg; t.style.display = "block";
-  clearTimeout(toastTimer); toastTimer = setTimeout(() => (t.style.display = "none"), 3500);
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => (t.style.display = "none"), 4000);
 }
 
 // --- Ajustes ---
-$("inFloor").value = cfg.floor;
-$("inFov").value = cfg.fov; $("fovOut").textContent = cfg.fov;
+const syncFov = () => { $("inFov").value = cfg.fov; $("fovOut").textContent = Math.round(cfg.fov); };
+$("inFloor").value = cfg.floor; syncFov();
 if (cfg.ground != null) $("inGround").value = cfg.ground;
 $("inFloor").onchange = (e) => { const v = Number(e.target.value); if (v >= 0 && v <= 100) { cfg.floor = v; store.set("floor", v); recompute(); } };
 $("inGround").onchange = (e) => {
@@ -429,11 +651,13 @@ $("inGround").onchange = (e) => {
   if (v >= 0 && v <= 5000) { cfg.ground = v; store.set("groundManual", v); recompute(); }
 };
 $("inFov").oninput = (e) => { cfg.fov = Number(e.target.value); $("fovOut").textContent = cfg.fov; store.set("fov", cfg.fov); };
-$("btnCal").onclick = openCal;
-$("calClose").onclick = () => ($("calPanel").hidden = true);
-$("calReset").onclick = () => { cfg.corr = DECLINATION; store.set("corr", cfg.corr); gyroCorr = autoCorr = null; toast("Calibración borrada"); };
-$("btnSet").onclick = () => ($("setPanel").hidden = false);
-$("setClose").onclick = () => ($("setPanel").hidden = true);
+$("calReset").onclick = () => {
+  cfg.corr = DECLINATION; cfg.pitch = 0; store.set("corr", cfg.corr); store.set("pitch", 0);
+  gyroCorr = autoCorr = null; calibrated = false; calPoints = [];
+  toast("Calibración borrada");
+};
+$("btnSet").onclick = () => openSheet("setPanel");
+$("setClose").onclick = closeSheets;
 
 // --- Arranque ---
 // ?sim=lat,lon,rumbo,inclinación  prueba en computadora sin sensores ni cámara.
@@ -444,7 +668,7 @@ $("btnStart").onclick = async () => {
   draw();
   if (sim) {
     const [lat, lon, h, p] = sim;
-    cfg.corr = 0;
+    cfg.corr = 0; cfg.pitch = 0;
     onPosition({ coords: { latitude: lat, longitude: lon, accuracy: 0 } });
     absBasis = cameraBasis(-h, 90 + p, 0);
     return;

@@ -79,6 +79,65 @@ export function rayMax(sample, lat, lon, h0, az, from, to) {
   return { angle, dist };
 }
 
+// Tilt the camera basis up by p degrees around its right axis (corrects a tilt sensor offset).
+export function tiltBasis({ right, up, fwd }, p) {
+  if (!p) return { right, up, fwd };
+  const c = Math.cos(rad(p)), s = Math.sin(rad(p));
+  return { right, fwd: fwd.map((x, i) => x * c + up[i] * s), up: up.map((x, i) => x * c - fwd[i] * s) };
+}
+
+// Where a landmark should appear, as offsets from the screen centre (u right, v up, CSS px).
+function predict(pt, corr, pitch, f) {
+  const b = tiltBasis(pt.basis, pitch);
+  const d = dirVector(pt.bearing - corr, pt.el);
+  const z = dot(d, b.fwd);
+  return [(f * dot(d, b.right)) / z, (f * dot(d, b.up)) / z];
+}
+
+// Calibration from taps. Each point: { basis, u, v, bearing, el } = phone orientation at the tap,
+// where the user tapped (offset from centre), and the true direction of the landmark they named.
+// Solves heading correction and tilt offset (deg); also focal length f (px) when fitF is true.
+// Gauss-Newton with numeric derivatives; 2-3 unknowns, so a tiny dense solve is enough.
+export function solveCalibration(points, init, fitF) {
+  const x = [init.corr, init.pitch, init.f];
+  const n = fitF ? 3 : 2;
+  const res = (p) => points.flatMap((pt) => { const [u, v] = predict(pt, p[0], p[1], p[2]); return [u - pt.u, v - pt.v]; });
+  for (let it = 0; it < 30; it++) {
+    const r0 = res(x);
+    const J = [];
+    for (let k = 0; k < n; k++) {
+      const h = k === 2 ? x[2] * 1e-4 : 1e-4, xp = [...x];
+      xp[k] += h;
+      J.push(res(xp).map((r, i) => (r - r0[i]) / h));
+    }
+    // Normal equations (JᵀJ + small damping) dx = -Jᵀr
+    const A = J.map((a) => J.map((b) => a.reduce((s, ai, i) => s + ai * b[i], 0)));
+    const g = J.map((a) => -a.reduce((s, ai, i) => s + ai * r0[i], 0));
+    A.forEach((row, i) => (row[i] *= 1 + 1e-9));
+    const dx = solveLinear(A, g);
+    dx.forEach((d, k) => (x[k] += d));
+    if (Math.abs(dx[0]) < 1e-6 && Math.abs(dx[1]) < 1e-6) break;
+  }
+  return { corr: ((x[0] % 360) + 540) % 360 - 180, pitch: x[1], f: x[2] };
+}
+
+// Gaussian elimination with partial pivoting for a small square system.
+function solveLinear(A, b) {
+  const n = b.length, M = A.map((row, i) => [...row, b[i]]);
+  for (let c = 0; c < n; c++) {
+    let p = c;
+    for (let r = c + 1; r < n; r++) if (Math.abs(M[r][c]) > Math.abs(M[p][c])) p = r;
+    [M[c], M[p]] = [M[p], M[c]];
+    for (let r = c + 1; r < n; r++) {
+      const k = M[r][c] / M[c][c];
+      for (let j = c; j <= n; j++) M[r][j] -= k * M[c][j];
+    }
+  }
+  const x = new Array(n).fill(0);
+  for (let r = n - 1; r >= 0; r--) x[r] = (M[r][n] - M[r].slice(r + 1, n).reduce((s, a, j) => s + a * x[r + 1 + j], 0)) / M[r][r];
+  return x;
+}
+
 // Blend two bases to smooth sensor jitter (k = weight of the new sample), then renormalise.
 export function smoothBasis(prev, next, k) {
   if (!prev) return next;

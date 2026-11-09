@@ -1,7 +1,7 @@
 // Run: node check.mjs   (fails loudly if the geometry breaks)
 import assert from "node:assert/strict";
-import { distBearing, elevAngle, dirVector, cameraBasis, headingPitch, project, destination, rayMax } from "./geo.js";
-import { LANDMARKS } from "./landmarks.js";
+import { distBearing, elevAngle, dirVector, cameraBasis, headingPitch, project, destination, rayMax, tiltBasis, solveCalibration } from "./geo.js";
+import { LANDMARKS, PERFILES } from "./landmarks.js";
 
 const near = (a, b, tol, msg) => assert.ok(Math.abs(a - b) <= tol, `${msg}: ${a} vs ${b}`);
 
@@ -48,6 +48,25 @@ assert.ok(ray.angle < 0.01 && ray.dist < 1000, "flat ground east stays at horizo
 assert.ok(rayMax(cone, 20, -103, 0, 0, 500, 38000).angle > elevAngle(0, 500, 40000), "hidden behind cone");
 assert.ok(rayMax(cone, 20, -103, 0, 0, 500, 38000).angle < elevAngle(0, 3000, 40000), "visible above cone");
 
+// Calibration: fake taps from a known truth (corr 7°, tilt 1.5°, f 800) must recover it.
+{
+  const truth = { corr: 7, pitch: 1.5, f: 800 };
+  const tap = (alpha, beta, bearing, el) => {
+    const basis = cameraBasis(alpha, beta, 0);
+    const b = tiltBasis(basis, truth.pitch);
+    const d = dirVector(bearing - truth.corr, el);
+    const z = d[0] * b.fwd[0] + d[1] * b.fwd[1] + d[2] * b.fwd[2];
+    const u = (truth.f * (d[0] * b.right[0] + d[1] * b.right[1] + d[2] * b.right[2])) / z;
+    const v = (truth.f * (d[0] * b.up[0] + d[1] * b.up[1] + d[2] * b.up[2])) / z;
+    return { basis, u, v, bearing, el };
+  };
+  const p1 = tap(-90, 90, 100, 1), p2 = tap(-95, 91, 120, 3);
+  let s = solveCalibration([p1], { corr: 0, pitch: 0, f: 800 }, false);
+  near(s.corr, 7, 1e-3, "1-tap corr"); near(s.pitch, 1.5, 1e-3, "1-tap pitch");
+  s = solveCalibration([p1, p2], { corr: 0, pitch: 0, f: 600 }, true);
+  near(s.corr, 7, 1e-2, "2-tap corr"); near(s.pitch, 1.5, 1e-2, "2-tap pitch"); near(s.f, 800, 1, "2-tap focal");
+}
+
 // Full skyline (720 rays to 135 km) must stay fast enough to run on a phone.
 const t0 = performance.now();
 for (let az = 0; az < 360; az += 0.5) rayMax(() => 1500, 20.68, -103.39, 1690, az, 500, 135000);
@@ -56,8 +75,9 @@ assert.ok(ms < 1000, `skyline too slow: ${ms.toFixed(0)} ms`);
 
 // Landmark data sanity: inside a box around Jalisco, plausible heights.
 for (const l of LANDMARKS) {
-  assert.ok(l.lat > 19 && l.lat < 21.5 && l.lon > -104.5 && l.lon < -102.5, `${l.nombre} coords`);
-  assert.ok(l.alt > 1400 && l.alt < 4500, `${l.nombre} alt`);
+  if (l.tipo !== "z") assert.ok(l.lat > 19 && l.lat < 21.5 && l.lon > -105.8 && l.lon < -101.5, `${l.nombre} coords`);
+  assert.ok(l.tipo === "z" || (l.alt > 1400 && l.alt < 4500), `${l.nombre} alt`);
+  if (l.tipo === "e") assert.ok(PERFILES[l.perfil], `${l.nombre} perfil`);
   if (l.tipo === "e") assert.ok(l.h > 0 && l.h < 300 && l.w > 0 && l.w < 400, `${l.nombre} h/w`);
 }
 
