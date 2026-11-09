@@ -1,6 +1,6 @@
 // Run: node check.mjs   (fails loudly if the geometry breaks)
 import assert from "node:assert/strict";
-import { distBearing, elevAngle, dirVector, cameraBasis, headingPitch, project, destination, rayMax, tiltBasis, solveCalibration } from "./geo.js";
+import { distBearing, elevAngle, dirVector, cameraBasis, headingPitch, project, destination, rayMax, tiltBasis, solveCalibration, skyEdges, matchSkyline } from "./geo.js";
 import { LANDMARKS, PERFILES } from "./landmarks.js";
 
 const near = (a, b, tol, msg) => assert.ok(Math.abs(a - b) <= tol, `${msg}: ${a} vs ${b}`);
@@ -65,6 +65,29 @@ assert.ok(rayMax(cone, 20, -103, 0, 0, 500, 38000).angle < elevAngle(0, 3000, 40
   near(s.corr, 7, 1e-3, "1-tap corr"); near(s.pitch, 1.5, 1e-3, "1-tap pitch");
   s = solveCalibration([p1, p2], { corr: 0, pitch: 0, f: 600 }, true);
   near(s.corr, 7, 1e-2, "2-tap corr"); near(s.pitch, 1.5, 1e-2, "2-tap pitch"); near(s.f, 800, 1, "2-tap focal");
+}
+
+// Auto calibration: a synthetic sky line (true heading error 7°, tilt error 1.2°, 20% towers) must be recovered.
+{
+  const S = (az) => 1 + 1.5 * Math.exp(-(((az - 100) / 4) ** 2)) + 0.8 * Math.exp(-(((az - 115) / 6) ** 2));
+  const pts = [];
+  for (let i = 0; i < 120; i++) {
+    const az = 85 + i * 0.33;
+    pts.push({ az, el: S(az + 7) - 1.2 + (i % 5 === 0 ? 2 : 0) + 0.05 * Math.sin(i) });
+  }
+  const m = matchSkyline(pts, S);
+  assert.ok(m.ok, `skyline match not ok: ${m.reason}`);
+  near(m.dh, 7, 0.15, "skyline dh"); near(m.dp, 1.2, 0.05, "skyline dp");
+  assert.ok(!matchSkyline(pts.map((p) => ({ az: p.az, el: 0.5 })), () => 0.5).ok, "flat horizon must not match");
+  assert.ok(!matchSkyline(pts.map((p) => ({ az: p.az, el: 0.5 + 0.02 * Math.sin(p.az) })), S).ok, "flat camera line must not match peaks");
+  // Frame 40×60: blue sky above row 20 + x/4, grey city below. Band covers the whole column.
+  const w = 40, h = 60, img = new Uint8ClampedArray(w * h * 4);
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    const sky = y < 20 + Math.floor(x / 4), i = (y * w + x) * 4;
+    img.set(sky ? [150, 190, 235, 255] : [90, 85, 80, 255], i);
+  }
+  const rows = skyEdges(img, w, h, () => [0, h]);
+  rows.forEach((y, x) => assert.equal(y, 20 + Math.floor(x / 4), `sky edge col ${x}`));
 }
 
 // Full skyline (720 rays to 135 km) must stay fast enough to run on a phone.

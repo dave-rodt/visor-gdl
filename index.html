@@ -34,6 +34,7 @@
             padding: 10px 10px 10px 14px; border-radius: 14px; font-size: 15px; }
   #banner span { flex: 1; }
   #banner button { padding: 8px 14px; min-height: 40px; border-radius: 10px; background: #fff; color: #000; font-weight: 600; }
+  #banner button.plain { background: none; color: #fff; text-decoration: underline; padding: 8px 4px; }
 
   #tapMark { position: fixed; width: 28px; height: 28px; margin: -14px 0 0 -14px; border: 3px solid var(--accent); border-radius: 50%; pointer-events: none; box-shadow: 0 0 0 2px rgba(0,0,0,.6); }
 
@@ -111,7 +112,7 @@
   <div id="status" class="glass" role="status">Esperando GPS…</div>
   <button id="calBadge" class="warn" hidden>Sin calibrar</button>
 </div>
-<div id="banner" class="glass" hidden><span id="bannerText"></span><button id="bannerBtn">Cancelar</button></div>
+<div id="banner" class="glass" hidden><span id="bannerText"></span><button id="bannerBtn"></button><button id="bannerBtn2" class="plain" hidden></button></div>
 <div id="tapMark" hidden></div>
 <div id="guide" class="glass" hidden><span id="guideText"></span><button id="guideClose" aria-label="Dejar de buscar">✕</button></div>
 <div id="toast" class="glass" role="alert"></div>
@@ -196,7 +197,7 @@
 <div id="landscape">Gira el teléfono a vertical.</div>
 
 <script type="module">
-import { distBearing, elevAngle, dirVector, cameraBasis, headingPitch, project, smoothBasis, rayMax, tiltBasis, solveCalibration } from "./geo.js";
+import { distBearing, elevAngle, dirVector, cameraBasis, headingPitch, project, smoothBasis, rayMax, tiltBasis, solveCalibration, skyEdges, matchSkyline } from "./geo.js";
 import { loadArea, elevation } from "./terrain.js";
 import { LANDMARKS, PERFILES } from "./landmarks.js";
 
@@ -274,7 +275,11 @@ const sample = (lat, lon, d) => {
   if (Number.isNaN(e) && d < 80000) e = elevation(lat, lon, 9);
   return Number.isNaN(e) ? elevation(lat, lon, 8) : e;
 };
-const skylineAt = (az) => skyline ? skyline[Math.round((((az % 360) + 360) % 360) * 2) % skyline.length].angle : 0;
+const skylineAt = (az) => {
+  if (!skyline) return 0;
+  const t = (((az % 360) + 360) % 360) * 2, i = Math.floor(t), k = t - i;
+  return skyline[i % skyline.length].angle * (1 - k) + skyline[(i + 1) % skyline.length].angle * k;
+};
 
 function recompute() {
   if (!pos) return;
@@ -448,6 +453,12 @@ function draw() {
   const h0 = viewerAlt();
   view = { b: tiltBasis(basis, cfg.pitch), f: focal(), cx: W / 2, cy: H / 2 };
   if (skyline) drawSkyline();
+  if (autoPending && skyline && video.videoWidth) { autoPending = false; startAuto(); }
+  if (autoMode) autoStep();
+  if (autoDots) {
+    ctx.fillStyle = "#4fc3ff";
+    for (const d of autoDots.filter((_, i) => i % 4 === 0)) { const p = P(d.az, d.el); if (p) { ctx.beginPath(); ctx.arc(p.x, p.y + 6, 2.5, 0, 7); ctx.fill(); } }
+  }
 
   const shown = [];
   for (const l of items) {
@@ -661,15 +672,96 @@ let calMode = false, calPoints = [], pending = null;
 
 function startCal() {
   if (!pos || !basis) { toast("Espera a tener GPS y brújula."); return; }
-  calMode = true; calPoints = [];
+  autoMode = false; calMode = true; calPoints = [];
   $("focusCard").hidden = true; $("guide").hidden = true;
-  banner("Toca en la pantalla, justo encima, un lugar que reconozcas.", "Cancelar");
+  banner("Toca en la pantalla, justo encima, un lugar que reconozcas.");
 }
-function endCal() { calMode = false; pending = null; $("banner").hidden = true; $("tapMark").hidden = true; $("guide").hidden = !target; focus = null; }
-function banner(text, btn) { $("bannerText").textContent = text; $("bannerBtn").textContent = btn; $("banner").hidden = false; }
-$("bannerBtn").onclick = endCal;
-$("btnCal").onclick = startCal;
-$("calBadge").onclick = startCal;
+function endCal() {
+  calMode = autoMode = false; autoDots = null; pending = null;
+  $("banner").hidden = true; $("tapMark").hidden = true; $("guide").hidden = !target; focus = null;
+}
+// Aviso arriba con uno o dos botones: banner(texto, [etiqueta, acción], [etiqueta, acción]?)
+function banner(text, [l1, f1] = ["Cancelar", endCal], second) {
+  $("bannerText").textContent = text;
+  Object.assign($("bannerBtn"), { textContent: l1, onclick: f1 });
+  $("bannerBtn2").hidden = !second;
+  if (second) Object.assign($("bannerBtn2"), { textContent: second[0], onclick: second[1] });
+  $("banner").hidden = false;
+}
+$("btnCal").onclick = () => startAuto();
+$("calBadge").onclick = () => startAuto();
+
+// --- Calibración automática ---
+// Busca en la cámara la línea entre cielo y tierra y la desliza sobre el horizonte del relieve.
+// Lo que mejor coincide da el error de la brújula y de la inclinación. Luego pide confirmar.
+let autoMode = false, autoPending = false, autoLast = 0, autoFails = 0, autoDots = null;
+let stillRef = null, stillSince = 0;
+const grab = document.createElement("canvas"), gctx = grab.getContext("2d", { willReadFrequently: true });
+
+function startAuto() {
+  if (!video.videoWidth) return startCal(); // sin cámara: solo a mano
+  if (!pos || !basis || !skyline) { toast("Espera a tener GPS, brújula y relieve."); return; }
+  endCal();
+  autoMode = true; autoFails = 0; autoLast = performance.now();
+  $("focusCard").hidden = true; $("guide").hidden = true;
+  banner("Calibrando: apunta hacia las montañas y sostén el teléfono quieto.", ["Omitir", skipAuto]);
+}
+function skipAuto() { endCal(); toast("Sin calibrar: los nombres pueden salir corridos."); }
+
+// Llamada en cada cuadro mientras autoMode, después de fijar view.
+function autoStep() {
+  const now = performance.now(), fwd = basis.fwd;
+  if (!stillRef || Math.acos(Math.min(1, fwd[0] * stillRef[0] + fwd[1] * stillRef[1] + fwd[2] * stillRef[2])) * DEG > 1) { stillRef = fwd; stillSince = now; }
+  if (now - stillSince < 600 || now - autoLast < 700) return;
+  autoLast = now;
+  const m = tryAuto();
+  if (m.ok) return applyAuto(m);
+  if (++autoFails === 6) {
+    const why = m.reason === "plano" ? "Apunta hacia donde se vean cerros con picos."
+      : "No encuentro el borde de las montañas. Apunta a otro lado o calibra tocando un lugar.";
+    banner(why, ["Tocar un lugar", startCal], ["Omitir", skipAuto]);
+  }
+}
+
+function tryAuto() {
+  const W = innerWidth, H = innerHeight, vw = video.videoWidth, vh = video.videoHeight;
+  const sc = Math.max(W / vw, H / vh), w = 160, h = Math.round((160 * H) / W), kx = W / w, ky = H / h;
+  grab.width = w; grab.height = h;
+  gctx.drawImage(video, (vw - W / sc) / 2, (vh - H / sc) / 2, W / sc, H / sc, 0, 0, w, h);
+  const { b, f, cx, cy } = view;
+  const dirAt = (x, y) => {
+    const u = x - cx, v = cy - y, r = b.fwd.map((q, i) => q + (b.right[i] * u) / f + (b.up[i] * v) / f);
+    return { az: (Math.atan2(r[0], r[1]) * DEG + corr + 360) % 360, el: Math.asin(r[2] / Math.hypot(...r)) * DEG };
+  };
+  // Solo se busca en las filas donde podría estar el horizonte: rumbo ±55° (vista + error de brújula), altura ±3°.
+  const c = dirAt(cx, cy).az;
+  let lo = Infinity, hi = -Infinity;
+  for (let a = -55; a <= 55; a += 0.5) { const e = skylineAt(c + a); lo = Math.min(lo, e); hi = Math.max(hi, e); }
+  const band = (x) => {
+    let y0 = h, y1 = -1;
+    for (let y = 0; y < h; y++) { const e = dirAt((x + 0.5) * kx, y * ky).el; if (e <= hi + 3 && y < y0) y0 = y; if (e >= lo - 3) y1 = y; }
+    return [y0, y1];
+  };
+  const rows = skyEdges(gctx.getImageData(0, 0, w, h).data, w, h, band);
+  const pts = rows.flatMap((y, x) => (y < 0 ? [] : [dirAt((x + 0.5) * kx, y * ky)]));
+  if (pts.length < w * 0.4) return { ok: false, reason: "sin borde" };
+  return { ...matchSkyline(pts, skylineAt), pts };
+}
+
+function applyAuto(m) {
+  const newCorr = wrap(corr + m.dh), pitch = cfg.pitch + m.dp;
+  if (Math.abs(pitch) > 10) return;
+  if (basis === relBasis) {
+    gyroCorr = newCorr;
+    if (absBasis) cfg.corr = wrap(headingPitch(relBasis).heading + gyroCorr - headingPitch(absBasis).heading);
+  } else cfg.corr = newCorr;
+  store.set("corr", cfg.corr);
+  cfg.pitch = pitch; store.set("pitch", pitch);
+  calibrated = true; autoMode = false;
+  autoDots = m.pts.map((p) => ({ az: p.az + m.dh, el: p.el + m.dp }));
+  banner("¿La línea blanca sigue el borde de las montañas? Los puntos azules, justo debajo, son lo que vio la cámara.",
+    ["Sí", () => { endCal(); toast("Calibrado. Si algo se corre, toca Calibrar."); }], ["Corregir", startCal]);
+}
 
 function calTap(x, y) {
   const { b, f, cx, cy } = view;
@@ -723,7 +815,7 @@ function calPick(l) {
   calibrated = true;
   calPoints = pts; pending = null;
   if (fitF) { endCal(); toast("Calibración completa. Si se mueve con el tiempo, vuelve a calibrar."); }
-  else banner(`Listo con ${l.nombre}. Para afinar el zoom, toca otro lugar lejos de este, hacia un lado.`, "Terminar");
+  else banner(`Listo con ${l.nombre}. Para afinar el zoom, toca otro lugar lejos de este, hacia un lado.`, ["Terminar", endCal]);
 }
 
 cv.addEventListener("click", (e) => {
@@ -776,6 +868,7 @@ $("btnStart").onclick = async () => {
     video.srcObject = await navigator.mediaDevices.getUserMedia({
       video: { facingMode: { ideal: "environment" }, width: { ideal: 1920 }, height: { ideal: 1080 } }, audio: false,
     });
+    autoPending = true; // calibración automática al abrir, en cuanto haya GPS, relieve y video
   } catch { toast("Sin cámara. Revisa los permisos del navegador."); }
   navigator.geolocation.watchPosition(onPosition, () => toast("Sin ubicación. Revisa los permisos."),
     { enableHighAccuracy: true, maximumAge: 5000 });

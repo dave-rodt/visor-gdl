@@ -148,3 +148,56 @@ export function smoothBasis(prev, next, k) {
   };
   return { right: mix(prev.right, next.right), up: mix(prev.up, next.up), fwd: mix(prev.fwd, next.fwd) };
 }
+
+// Sky/land line in a small camera frame (rgba bytes, w × h). band(x) gives the rows [y0, y1] to search.
+// Per column: the row (fractional) with the strongest "bright and blue above, darker below" step, or -1 if too weak.
+export function skyEdges(rgba, w, h, band, minStep = 12) {
+  const out = new Array(w).fill(-1), v = new Float32Array(h);
+  for (let x = 0; x < w; x++) {
+    for (let y = 0; y < h; y++) {
+      const i = (y * w + x) * 4, r = rgba[i], g = rgba[i + 1], b = rgba[i + 2];
+      v[y] = 0.3 * r + 0.59 * g + 0.11 * b + 0.5 * (b - r);
+    }
+    const [y0, y1] = band(x);
+    const step = (y) => v[y - 3] + v[y - 2] + v[y - 1] - v[y] - v[y + 1] - v[y + 2];
+    let best = minStep * 3;
+    for (let y = Math.max(4, y0); y <= Math.min(h - 4, y1); y++) if (step(y) > best) { best = step(y); out[x] = y; }
+    // Sub-row position: peak of a parabola through the step scores around the best row.
+    const y = out[x];
+    if (y > 0) { const a = step(y - 1), c = step(y + 1), d = a - 2 * best + c; if (d < 0) out[x] = y + (a - c) / (2 * d); }
+  }
+  return out;
+}
+
+// Slide the measured sky line along the terrain skyline S(az) to find the heading error dh
+// and tilt error dp (deg). pts: [{ az, el }] from the current calibration.
+// Truncated cost, so towers sticking above the horizon don't pull the fit.
+// ok only if most points fit, the fit is clearly better than any other shift, and the
+// skyline in view has peaks (a flat horizon says nothing about heading).
+export function matchSkyline(pts, S, range = 25) {
+  const median = (a) => { const s = [...a].sort((x, y) => x - y); return s[s.length >> 1]; };
+  const fits = [];
+  for (let dh = -range; dh <= range + 1e-9; dh += 0.1) {
+    const r = pts.map((p) => S(p.az + dh) - p.el);
+    const dp = median(r);
+    fits.push({ dh, dp, cost: r.reduce((s, x) => s + Math.min(Math.abs(x - dp), 1), 0), r });
+  }
+  const best = fits.reduce((a, b) => (b.cost < a.cost ? b : a));
+  // Runner-up: the best other dip in the cost curve (neighbours of the winner are the same dip).
+  const dips = fits.filter((f, i) => Math.abs(f.dh - best.dh) > 1 && f.cost <= (fits[i - 1]?.cost ?? Infinity) && f.cost <= (fits[i + 1]?.cost ?? Infinity));
+  // Compare on the points that fit the winner, so towers and clouds don't pad every score equally.
+  const keep = best.r.map((x) => Math.abs(x - best.dp) < 1);
+  const clean = (f) => f.r.reduce((s, x, i) => s + (keep[i] ? Math.min(Math.abs(x - f.dp), 1) : 0), 0);
+  const other = Math.min(...dips.map(clean));
+  const ins = best.r.filter((x) => Math.abs(x - best.dp) < 0.35);
+  const dp = ins.length ? ins.reduce((s, x) => s + x, 0) / ins.length : best.dp;
+  const sky = pts.map((p) => S(p.az + best.dh));
+  const relief = Math.max(...sky) - Math.min(...sky);
+  const inliers = ins.length / pts.length;
+  // The camera line must have shape of its own that the terrain explains far better than a flat line.
+  const mid = median(pts.map((p) => p.el));
+  const flat = pts.reduce((s, p, i) => s + (keep[i] ? Math.min(Math.abs(p.el - mid), 1) : 0), 0);
+  const reason = relief < 0.4 || clean(best) > 0.5 * flat ? "plano" : inliers < 0.5 ? "no cuadra"
+    : clean(best) > 0.75 * other || Math.abs(best.dh) > range - 0.5 ? "dudoso" : "";
+  return { dh: Math.round(best.dh * 10) / 10, dp, inliers, ok: !reason, reason };
+}
