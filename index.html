@@ -5,6 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#000000">
 <title>Visor GDL</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
 <style>
   :root {
     --fg: #fff; --muted: #b9b9b9; --glass: rgba(18,18,18,.78); --line: rgba(255,255,255,.14);
@@ -44,9 +47,13 @@
   #focusCard .chev { font-size: 26px; color: var(--muted); }
 
   #bar { position: fixed; bottom: max(12px, env(safe-area-inset-bottom)); left: 12px; right: 12px; display: flex; gap: 10px; }
-  #bar button { flex: 1; min-height: 52px; border-radius: 14px; font-weight: 600; }
-  #btnCal { background: var(--accent); color: #000; }
-  #btnSet { color: #fff; }
+  #bar button { flex: 1; min-height: 52px; border-radius: 14px; font-weight: 600; color: #fff; font-size: 15px; }
+  #bar #btnCal { flex: 1.3; background: var(--accent); color: #000; }
+  #guide { position: fixed; top: calc(max(10px, env(safe-area-inset-top)) + 46px); left: 12px; right: 12px; display: flex; gap: 10px; align-items: center;
+           padding: 8px 8px 8px 14px; border-radius: 14px; font-size: 15px; }
+  #guide span { flex: 1; }
+  #guide button { width: 40px; height: 40px; border-radius: 50%; background: rgba(255,255,255,.15); }
+  .group { margin: 16px 0 8px; font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
 
   #backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.45); }
   .sheet { position: fixed; left: 0; right: 0; bottom: 0; max-height: 86%; overflow: auto; background: #161616; border-radius: 20px 20px 0 0;
@@ -106,6 +113,7 @@
 </div>
 <div id="banner" class="glass" hidden><span id="bannerText"></span><button id="bannerBtn">Cancelar</button></div>
 <div id="tapMark" hidden></div>
+<div id="guide" class="glass" hidden><span id="guideText"></span><button id="guideClose" aria-label="Dejar de buscar">✕</button></div>
 <div id="toast" class="glass" role="alert"></div>
 
 <button id="focusCard" class="glass" hidden>
@@ -116,6 +124,8 @@
 
 <nav id="bar">
   <button id="btnCal">Calibrar</button>
+  <button id="btnFind" class="glass">Buscar</button>
+  <button id="btnShot" class="glass">Foto</button>
   <button id="btnSet" class="glass">Ajustes</button>
 </nav>
 
@@ -131,6 +141,16 @@
     <p id="infoText"></p>
     <p id="infoLink"></p>
     <ul id="credits"></ul>
+  </div>
+</section>
+
+<section id="findPanel" class="sheet" role="dialog" aria-modal="true" aria-labelledby="findTitle" hidden>
+  <div class="grip"></div>
+  <div class="body">
+    <h2 id="findTitle">¿Dónde está…?</h2>
+    <p>Elige un lugar y una flecha te dirá hacia dónde girar.</p>
+    <div id="findList"></div>
+    <button id="findClose" class="btn plain">Cerrar</button>
   </div>
 </section>
 
@@ -487,13 +507,14 @@ function draw() {
     ctx.globalAlpha = 1;
     hits.push({ l, x0: x0 - 6, x1: x0 + w + 6, y0: ly - 22, y1: ly + 22 });
   }
+  if (target) drawTarget(W, H, trueHeading);
 }
 
 // --- Tarjeta de lo que está en la mira ---
 function setFocus(l) {
   if ((l && l.nombre) === (focus && focus.nombre)) { if (l) focus = l; return; }
   focus = l;
-  const busy = calMode || !$("infoPanel").hidden || !$("pickPanel").hidden || !$("setPanel").hidden;
+  const busy = calMode || !$("backdrop").hidden;
   $("focusCard").hidden = !l || busy;
   if (!l) return;
   $("focusName").textContent = l.nombre;
@@ -505,12 +526,12 @@ $("focusCard").onclick = () => focus && openInfo(focus);
 
 // --- Hojas (paneles inferiores) ---
 function openSheet(id) {
-  for (const s of ["infoPanel", "pickPanel", "setPanel"]) $(s).hidden = s !== id;
+  for (const s of ["infoPanel", "pickPanel", "setPanel", "findPanel"]) $(s).hidden = s !== id;
   $("backdrop").hidden = false;
   $("focusCard").hidden = true;
 }
 function closeSheets() {
-  for (const s of ["infoPanel", "pickPanel", "setPanel"]) $(s).hidden = true;
+  for (const s of ["infoPanel", "pickPanel", "setPanel", "findPanel"]) $(s).hidden = true;
   $("backdrop").hidden = true;
   focus = null; // la tarjeta vuelve a aparecer en el siguiente cuadro
 }
@@ -557,16 +578,94 @@ $("carousel").addEventListener("scroll", (e) => {
 });
 $("infoClose").onclick = closeSheets;
 
+// --- Buscar: flecha hacia un lugar elegido ---
+let target = null, guideMsg = "";
+const dot3 = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+
+function drawTarget(W, H, heading) {
+  const l = items.find((i) => i.nombre === target);
+  if (!l) return;
+  const turn = wrap(l.bearing - heading);
+  const msg = Math.abs(turn) < 4 ? `${l.nombre}: al frente, ${fmtDist(l.dist)}`
+    : `${l.nombre}: gira ${Math.round(Math.abs(turn))}° a la ${turn > 0 ? "derecha" : "izquierda"}`;
+  if (msg !== guideMsg) $("guideText").textContent = guideMsg = msg;
+
+  const top = 110, bottom = H - 170;
+  const p = P(l.bearing, l.el);
+  ctx.save();
+  if (p && p.x > 24 && p.x < W - 24 && p.y > top && p.y < bottom) {
+    // En pantalla: anillo que late sobre el lugar.
+    const r = 20 + 5 * Math.sin(performance.now() / 180);
+    ctx.lineWidth = 6; ctx.strokeStyle = "rgba(0,0,0,.5)"; ctx.beginPath(); ctx.arc(p.x, p.y, r, 0, 7); ctx.stroke();
+    ctx.lineWidth = 3; ctx.strokeStyle = "#fff"; ctx.beginPath(); ctx.arc(p.x, p.y, r, 0, 7); ctx.stroke();
+  } else {
+    // Fuera de pantalla: flecha en el borde. Si está detrás, apunta hacia el lado más corto.
+    const d = dirVector(l.bearing - corr, l.el), b = view.b;
+    const behind = dot3(d, b.fwd) <= 0;
+    const ang = behind ? (turn > 0 ? 0 : Math.PI) : Math.atan2(-dot3(d, b.up), dot3(d, b.right));
+    const c = Math.cos(ang), s = Math.sin(ang), cx = W / 2, cy = (top + bottom) / 2, m = 30;
+    const t = Math.min(c ? (c > 0 ? W - m - cx : cx - m) / Math.abs(c) : Infinity, s ? (s > 0 ? bottom - cy : cy - top) / Math.abs(s) : Infinity);
+    ctx.translate(cx + c * t, cy + s * t); ctx.rotate(ang);
+    ctx.beginPath(); ctx.moveTo(18, 0); ctx.lineTo(-12, -14); ctx.lineTo(-6, 0); ctx.lineTo(-12, 14); ctx.closePath();
+    ctx.lineWidth = 3; ctx.strokeStyle = "rgba(0,0,0,.6)"; ctx.stroke();
+    ctx.fillStyle = "#ffd54a"; ctx.fill();
+  }
+  ctx.restore();
+}
+
+function openFind() {
+  if (!items.length) { toast("Espera a tener GPS."); return; }
+  const groups = [["m", "Montañas"], ["e", "Edificios"], ["z", "Zonas y ciudades"]];
+  $("findList").replaceChildren(...groups.flatMap(([tipo, title]) => [
+    Object.assign(document.createElement("div"), { className: "group", textContent: title }),
+    ...items.filter((l) => l.tipo === tipo).sort((a, b) => a.dist - b.dist).map((l) => {
+      const btn = Object.assign(document.createElement("button"), { className: "btn" });
+      btn.append(l.nombre, Object.assign(document.createElement("small"), { textContent: `${fmtDist(l.dist)} al ${card(l.bearing)}` }));
+      btn.onclick = () => { target = l.nombre; guideMsg = ""; $("guide").hidden = false; closeSheets(); };
+      return btn;
+    }),
+  ]));
+  openSheet("findPanel");
+}
+$("btnFind").onclick = openFind;
+$("findClose").onclick = closeSheets;
+$("guideClose").onclick = () => { target = null; $("guide").hidden = true; };
+
+// --- Foto: cámara + etiquetas en una imagen para compartir ---
+async function shareShot() {
+  const W = innerWidth, H = innerHeight, dpr = devicePixelRatio || 1;
+  const c = document.createElement("canvas");
+  c.width = W * dpr; c.height = H * dpr;
+  const x = c.getContext("2d");
+  x.fillStyle = "#111"; x.fillRect(0, 0, c.width, c.height);
+  const vw = video.videoWidth, vh = video.videoHeight;
+  if (vw) { const k = Math.max(W / vw, H / vh); x.drawImage(video, ((W - vw * k) / 2) * dpr, ((H - vh * k) / 2) * dpr, vw * k * dpr, vh * k * dpr); }
+  x.drawImage(cv, 0, 0);
+  x.scale(dpr, dpr);
+  x.fillStyle = "rgba(0,0,0,.6)"; x.fillRect(0, H - 34, W, 34);
+  x.fillStyle = "#fff"; x.font = "600 14px system-ui, sans-serif"; x.textBaseline = "middle";
+  x.fillText(`Visor GDL · ${$("status").textContent.split(" · ")[0]} · ${new Date().toLocaleDateString("es-MX")}`, 12, H - 17);
+  const blob = await new Promise((r) => c.toBlob(r, "image/jpeg", 0.9));
+  const file = new File([blob], `visor-gdl-${Date.now()}.jpg`, { type: "image/jpeg" });
+  try {
+    if (navigator.canShare?.({ files: [file] })) return await navigator.share({ files: [file], title: "Visor GDL" });
+  } catch (e) { if (e.name === "AbortError") return; }
+  const a = Object.assign(document.createElement("a"), { href: URL.createObjectURL(blob), download: file.name });
+  a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+  toast("Foto guardada en Descargas.");
+}
+$("btnShot").onclick = () => shareShot().catch(() => toast("No se pudo crear la foto."));
+
 // --- Calibración: toca en pantalla un lugar conocido y di cuál es ---
 let calMode = false, calPoints = [], pending = null;
 
 function startCal() {
   if (!pos || !basis) { toast("Espera a tener GPS y brújula."); return; }
   calMode = true; calPoints = [];
-  $("focusCard").hidden = true;
+  $("focusCard").hidden = true; $("guide").hidden = true;
   banner("Toca en la pantalla, justo encima, un lugar que reconozcas.", "Cancelar");
 }
-function endCal() { calMode = false; pending = null; $("banner").hidden = true; $("tapMark").hidden = true; focus = null; }
+function endCal() { calMode = false; pending = null; $("banner").hidden = true; $("tapMark").hidden = true; $("guide").hidden = !target; focus = null; }
 function banner(text, btn) { $("bannerText").textContent = text; $("bannerBtn").textContent = btn; $("banner").hidden = false; }
 $("bannerBtn").onclick = endCal;
 $("btnCal").onclick = startCal;
@@ -685,6 +784,7 @@ $("btnStart").onclick = async () => {
   try { await navigator.wakeLock?.request("screen"); } catch {}
 };
 if (sim) $("btnStart").click();
+if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
 </script>
 </body>
 </html>

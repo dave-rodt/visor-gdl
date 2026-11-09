@@ -5,7 +5,7 @@
 // wiki   = título del artículo en es.wikipedia.org; tools/fetch_info.py baja su texto y fotos.
 // tipo: "m" = montaña (su silueta sale del relieve), "e" = edificio o monumento,
 //       "z" = zona o ciudad (sin silueta; si no se ve, la etiqueta se pone sobre el horizonte).
-// Coordenadas: OpenStreetMap. Altura del suelo: Copernicus DEM.
+// Coordenadas y anchos: OpenStreetMap. Altura del suelo: Copernicus DEM. Alturas con fuente: Wikipedia.
 export const LANDMARKS = [
   // Montañas
   { nombre: "Volcán de Tequila", lat: 20.787099, lon: -103.84681, alt: 2920, tipo: "m", wiki: "Volcán de Tequila" },
@@ -19,21 +19,21 @@ export const LANDMARKS = [
   { nombre: "Cerro La Col", lat: 20.867985, lon: -103.50771, alt: 2200, tipo: "m" },
 
   // Edificios y monumentos (alt = suelo + h)
-  { nombre: "Catedral", lat: 20.677133, lon: -103.34696, alt: 1551 + 65, h: 65, w: 60, perfil: "catedral", tipo: "e", wiki: "Catedral metropolitana de Guadalajara" },
+  { nombre: "Catedral", lat: 20.677133, lon: -103.34696, alt: 1551 + 66, h: 66, w: 72, perfil: "catedral", tipo: "e", wiki: "Catedral metropolitana de Guadalajara" },
   { nombre: "Templo Expiatorio", lat: 20.673657, lon: -103.35885, alt: 1558 + 75, h: 75, w: 35, perfil: "expiatorio", tipo: "e", wiki: "Templo Expiatorio del Santísimo Sacramento" }, // aprox
   { nombre: "Templo La Luz del Mundo", lat: 20.671891, lon: -103.28411, alt: 1570 + 60, h: 60, w: 90, perfil: "piramide", tipo: "e", wiki: "Iglesia La Luz del Mundo" }, // aprox
   { nombre: "Basílica de Zapopan", lat: 20.721328, lon: -103.39234, alt: 1581 + 40, h: 40, w: 45, perfil: "basilica", tipo: "e", wiki: "Basílica de Zapopan" }, // aprox
-  { nombre: "Hotel Riu", lat: 20.665815, lon: -103.39372, alt: 1604 + 200, h: 200, w: 40, perfil: "torreCorona", tipo: "e", wiki: "Hotel Riu Plaza Guadalajara" }, // aprox
-  { nombre: "Puente Matute Remus", lat: 20.664851, lon: -103.39376, alt: 1602 + 100, h: 100, w: 200, perfil: "atirantado", tipo: "e", wiki: "Puente Matute Remus" }, // aprox; w = tramo con tirantes
+  { nombre: "Hotel Riu", lat: 20.665815, lon: -103.39372, alt: 1604 + 204, h: 204, w: 40, perfil: "torreCorona", tipo: "e", wiki: "Hotel Riu Plaza Guadalajara" }, // 204 m (Wikipedia)
+  { nombre: "Puente Matute Remus", lat: 20.664851, lon: -103.39376, alt: 1602 + 40, h: 40, w: 165, perfil: "atirantado", tipo: "e", wiki: "Puente Matute Remus" }, // pilón 40 m, vano 165 m (Wikipedia)
   { nombre: "La Minerva", lat: 20.674405, lon: -103.38733, alt: 1590 + 21, h: 21, w: 10, perfil: "estatua", tipo: "e", wiki: "Glorieta La Minerva" },
   { nombre: "Los Arcos", lat: 20.674436, lon: -103.38482, alt: 1588 + 20, h: 20, w: 25, perfil: "arco", tipo: "e", wiki: "Arcos de Guadalajara" }, // aprox
   { nombre: "Hospicio Cabañas", lat: 20.67687, lon: -103.3377, alt: 1540 + 35, h: 35, w: 165, perfil: "cupula", tipo: "e", wiki: "Hospicio Cabañas" }, // aprox
-  { nombre: "Punto São Paulo", lat: 20.702109, lon: -103.37645, alt: 1549 + 170, h: 170, w: 40, perfil: "torre", tipo: "e" }, // aprox
-  { nombre: "Andares", lat: 20.710635, lon: -103.41286, alt: 1582 + 40, h: 40, w: 150, perfil: "bloque", tipo: "e" }, // aprox
+  { nombre: "Punto São Paulo", lat: 20.70302, lon: -103.37571, alt: 1549 + 170, h: 170, w: 40, perfil: "torre", tipo: "e" }, // aprox
+  { nombre: "Andares", lat: 20.71139, lon: -103.41297, alt: 1582 + 40, h: 40, w: 150, perfil: "bloque", tipo: "e" }, // aprox
   { nombre: "Biblioteca Juan José Arreola", lat: 20.73809, lon: -103.38105, alt: 1559 + 35, h: 35, w: 130, perfil: "bloque", tipo: "e", wiki: 'Biblioteca Pública del Estado de Jalisco "Juan José Arreola"' }, // aprox
   { nombre: "Estadio Jalisco", lat: 20.704786, lon: -103.32767, alt: 1565 + 30, h: 30, w: 250, perfil: "estadio", tipo: "e", wiki: "Estadio Jalisco" }, // aprox
   { nombre: "Estadio Akron", lat: 20.681846, lon: -103.46267, alt: 1675 + 45, h: 45, w: 260, perfil: "estadio", tipo: "e", wiki: "Estadio Akron" }, // aprox
-  { nombre: "Auditorio Telmex", lat: 20.733308, lon: -103.38135, alt: 1558 + 35, h: 35, w: 120, perfil: "boveda", tipo: "e", wiki: "Auditorio Telmex" }, // aprox
+  { nombre: "Auditorio Telmex", lat: 20.733308, lon: -103.38135, alt: 1558 + 35, h: 35, w: 150, perfil: "boveda", tipo: "e", wiki: "Auditorio Telmex" }, // aprox
   { nombre: "Aeropuerto GDL", lat: 20.528724, lon: -103.31353, alt: 1526 + 30, h: 30, w: 20, perfil: "torreControl", tipo: "e", wiki: "Aeropuerto Internacional de Guadalajara" }, // aprox, torre de control
 
   // Zonas y ciudades
@@ -54,8 +54,8 @@ export const PERFILES = {
   torre: { poly: [[-0.5, 0], [-0.5, 0.95], [-0.3, 1], [0.5, 1], [0.5, 0]] },
   atirantado: {
     poly: [[-0.025, 0], [-0.025, 1], [0.025, 1], [0.025, 0]],
-    lines: [[[-0.5, 0.12], [0.5, 0.12]], [[0, 0.97], [-0.5, 0.12]], [[0, 0.97], [0.5, 0.12]], [[0, 0.88], [-0.36, 0.12]],
-      [[0, 0.88], [0.36, 0.12]], [[0, 0.79], [-0.22, 0.12]], [[0, 0.79], [0.22, 0.12]]],
+    lines: [[[-0.5, 0.2], [0.5, 0.2]], [[0, 0.97], [-0.5, 0.2]], [[0, 0.97], [0.5, 0.2]], [[0, 0.88], [-0.36, 0.2]],
+      [[0, 0.88], [0.36, 0.2]], [[0, 0.79], [-0.22, 0.2]], [[0, 0.79], [0.22, 0.2]]],
   },
   estatua: { poly: [[-0.5, 0], [-0.5, 0.08], [-0.32, 0.1], [-0.32, 0.6], [-0.16, 0.64], [-0.14, 0.86], [-0.04, 1], [0.04, 0.95], [0.14, 0.86], [0.16, 0.64], [0.32, 0.6], [0.32, 0.1], [0.5, 0.08], [0.5, 0]] },
   arco: { poly: [[-0.5, 0], [-0.5, 1], [0.5, 1], [0.5, 0], [0.2, 0], [0.2, 0.5], [0.14, 0.62], [0, 0.68], [-0.14, 0.62], [-0.2, 0.5], [-0.2, 0]] },
