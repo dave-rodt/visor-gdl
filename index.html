@@ -125,7 +125,12 @@ const cfg = {
 };
 
 let pos = null;        // { lat, lon, acc }
-let basis = null;      // orientación suavizada
+let absBasis = null;   // orientación con brújula (deviceorientationabsolute)
+let relBasis = null;   // orientación con giroscopio, sin brújula (deviceorientation). Norte arbitrario.
+let gyroCorr = null;   // corrección del giroscopio, fijada al calibrar. Se pierde al recargar.
+let autoCorr = null;   // antes de calibrar: corrección que hace que el giroscopio siga a la brújula
+let basis = null, corr = 0, mode = ""; // lo que se usa en cada cuadro
+const wrap = (d) => ((d % 360) + 540) % 360 - 180;
 let items = [];        // puntos con distancia, rumbo, ángulo vertical y silueta
 let skyline = null;    // [{ az, angle, dist }] cada 0.5°
 let reliefFor = null;  // dónde se cargó el relieve
@@ -190,10 +195,32 @@ function onPosition(p) {
 let calcFor = null;
 
 let lastSensor = 0;
-function onOrientation(e) {
+function onAbsolute(e) {
   if (e.alpha == null) return;
   lastSensor = performance.now();
-  basis = smoothBasis(basis, cameraBasis(e.alpha, e.beta, e.gamma), 0.15);
+  absBasis = smoothBasis(absBasis, cameraBasis(e.alpha, e.beta, e.gamma), 0.15);
+}
+function onRelative(e) {
+  if (e.alpha == null) return;
+  if (e.absolute) return onAbsolute(e); // teléfonos sin giroscopio
+  lastSensor = performance.now();
+  relBasis = smoothBasis(relBasis, cameraBasis(e.alpha, e.beta, e.gamma), 0.3);
+}
+
+// La brújula cambia su lectura al inclinar el teléfono (imanes de la funda, magnetómetro mal calibrado).
+// El giroscopio no, así que después de calibrar el rumbo sale solo del giroscopio.
+// ponytail: el giroscopio se desvía ~1° cada pocos minutos; hay que volver a calibrar.
+// Mejora posible: corregirlo despacio hacia la brújula cuando el teléfono esté nivelado.
+function pickView() {
+  if (relBasis && absBasis) {
+    basis = relBasis;
+    if (gyroCorr != null) { corr = gyroCorr; mode = "giroscopio"; return; }
+    const target = headingPitch(absBasis).heading + cfg.corr - headingPitch(relBasis).heading;
+    autoCorr = autoCorr == null ? target : autoCorr + wrap(target - autoCorr) * 0.02;
+    corr = autoCorr; mode = "brújula";
+  } else if (absBasis) {
+    basis = absBasis; corr = cfg.corr; mode = "brújula";
+  }
 }
 
 // --- Dibujo ---
@@ -223,7 +250,7 @@ function strokeLine(pts, f, cx, cy, color, width) {
   ctx.beginPath();
   let pen = false;
   for (const s of pts) {
-    const p = s && project(dirVector(s.az - cfg.corr, s.angle), basis, f, cx, cy);
+    const p = s && project(dirVector(s.az - corr, s.angle), basis, f, cx, cy);
     if (!p) { pen = false; continue; }
     pen ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y);
     pen = true;
@@ -238,7 +265,7 @@ function strokeBuilding(l, f, cx, cy) {
   const half = (Math.atan2(l.w / 2, l.dist) * 180) / Math.PI;
   const base = elevAngle(viewerAlt(), l.alt - l.h, l.dist);
   const corners = [[-half, base], [-half, l.el], [half, l.el], [half, base]]
-    .map(([da, el]) => project(dirVector(l.bearing - cfg.corr + da, el), basis, f, cx, cy));
+    .map(([da, el]) => project(dirVector(l.bearing - corr + da, el), basis, f, cx, cy));
   if (corners.some((p) => !p)) return;
   ctx.beginPath();
   corners.forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)));
@@ -252,14 +279,15 @@ function draw() {
   const W = innerWidth, H = innerHeight;
   ctx.clearRect(0, 0, W, H);
   hits = [];
+  pickView();
   if (!basis) {
     if (lastSensor === 0 && performance.now() > 3000) $("status").textContent = "Este navegador no da la brújula. Usa Chrome en Android.";
     return;
   }
   const { heading } = headingPitch(basis);
-  const trueHeading = (heading + cfg.corr + 360) % 360;
+  const trueHeading = (heading + corr + 360) % 360;
   $("status").textContent = !pos ? "Esperando GPS…"
-    : `${Math.round(trueHeading)}° ${card(trueHeading)} · ${Math.round(viewerAlt())} msnm · GPS ±${Math.round(pos.acc)} m` + (reliefReady ? "" : " · cargando relieve…");
+    : `${Math.round(trueHeading)}° ${card(trueHeading)} · ${Math.round(viewerAlt())} msnm · GPS ±${Math.round(pos.acc)} m · ${mode}` + (reliefReady ? "" : " · cargando relieve…");
   if (!pos) return;
 
   const f = focal(), cx = W / 2, cy = H / 2;
@@ -272,7 +300,7 @@ function draw() {
 
   const shown = [];
   for (const l of items) {
-    const p = project(dirVector(l.bearing - cfg.corr, l.el), basis, f, cx, cy);
+    const p = project(dirVector(l.bearing - corr, l.el), basis, f, cx, cy);
     if (!p || p.x < -40 || p.x > W + 40) continue;
     if (!l.hidden) {
       if (l.ridge) strokeLine(l.ridge, f, cx, cy, "#9be7a1", 3);
@@ -373,11 +401,11 @@ function openCal() {
     const li = document.createElement("li"), b = document.createElement("button");
     b.textContent = `${l.nombre} · ${fmtKm(l.dist)}`;
     b.onclick = () => {
-      const { heading } = headingPitch(basis);
-      cfg.corr = ((l.bearing - heading + 540) % 360) - 180;
-      store.set("corr", cfg.corr);
+      // Fija el giroscopio y guarda también la corrección de la brújula para la próxima vez.
+      if (relBasis) gyroCorr = wrap(l.bearing - headingPitch(relBasis).heading);
+      if (absBasis) { cfg.corr = wrap(l.bearing - headingPitch(absBasis).heading); store.set("corr", cfg.corr); }
       $("calPanel").hidden = true;
-      toast(`Calibrado con ${l.nombre} (${cfg.corr.toFixed(1)}°)`);
+      toast(relBasis ? `Calibrado con ${l.nombre}. Ahora usa el giroscopio.` : `Calibrado con ${l.nombre}`);
     };
     li.append(b); list.append(li);
   }
@@ -403,7 +431,7 @@ $("inGround").onchange = (e) => {
 $("inFov").oninput = (e) => { cfg.fov = Number(e.target.value); $("fovOut").textContent = cfg.fov; store.set("fov", cfg.fov); };
 $("btnCal").onclick = openCal;
 $("calClose").onclick = () => ($("calPanel").hidden = true);
-$("calReset").onclick = () => { cfg.corr = DECLINATION; store.set("corr", cfg.corr); toast("Calibración borrada"); };
+$("calReset").onclick = () => { cfg.corr = DECLINATION; store.set("corr", cfg.corr); gyroCorr = autoCorr = null; toast("Calibración borrada"); };
 $("btnSet").onclick = () => ($("setPanel").hidden = false);
 $("setClose").onclick = () => ($("setPanel").hidden = true);
 
@@ -418,7 +446,7 @@ $("btnStart").onclick = async () => {
     const [lat, lon, h, p] = sim;
     cfg.corr = 0;
     onPosition({ coords: { latitude: lat, longitude: lon, accuracy: 0 } });
-    basis = cameraBasis(-h, 90 + p, 0);
+    absBasis = cameraBasis(-h, 90 + p, 0);
     return;
   }
   try {
@@ -428,8 +456,8 @@ $("btnStart").onclick = async () => {
   } catch { toast("Sin cámara. Revisa los permisos del navegador."); }
   navigator.geolocation.watchPosition(onPosition, () => toast("Sin ubicación. Revisa los permisos."),
     { enableHighAccuracy: true, maximumAge: 5000 });
-  if ("ondeviceorientationabsolute" in window) addEventListener("deviceorientationabsolute", onOrientation);
-  else addEventListener("deviceorientation", (e) => e.absolute && onOrientation(e));
+  if ("ondeviceorientationabsolute" in window) addEventListener("deviceorientationabsolute", onAbsolute);
+  addEventListener("deviceorientation", onRelative);
   try { await navigator.wakeLock?.request("screen"); } catch {}
 };
 if (sim) $("btnStart").click();
