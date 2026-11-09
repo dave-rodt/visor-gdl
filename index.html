@@ -1,0 +1,286 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#000000">
+<title>Visor GDL</title>
+<style>
+  :root { --fg: #fff; --bg: rgba(0,0,0,.72); --accent: #ffd54a; --mountain: #9be7a1; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: #111; color: var(--fg); font: 16px/1.35 system-ui, sans-serif; overflow: hidden; }
+  video, canvas { position: fixed; inset: 0; width: 100%; height: 100%; }
+  video { object-fit: cover; }
+  #cross { position: fixed; left: 50%; top: 50%; width: 36px; height: 36px; margin: -18px 0 0 -18px; pointer-events: none;
+           border: 2px solid var(--accent); border-radius: 50%; box-shadow: 0 0 0 1px #000; }
+  #status { position: fixed; top: 0; left: 0; right: 0; padding: max(8px, env(safe-area-inset-top)) 12px 8px;
+            background: var(--bg); font-size: 15px; text-align: center; }
+  #bar { position: fixed; bottom: 0; left: 0; right: 0; display: flex; gap: 8px; justify-content: center;
+         padding: 10px 12px max(10px, env(safe-area-inset-bottom)); background: var(--bg); }
+  button { font: inherit; color: #000; background: var(--accent); border: 0; border-radius: 10px; padding: 12px 18px; min-height: 48px; }
+  button.sec { background: #ddd; }
+  .panel { position: fixed; left: 0; right: 0; bottom: 0; max-height: 70%; overflow: auto; background: #1b1b1b;
+           padding: 16px 16px max(16px, env(safe-area-inset-bottom)); border-radius: 16px 16px 0 0; }
+  .panel h2 { margin: 0 0 8px; font-size: 18px; }
+  .panel p { margin: 0 0 12px; color: #ccc; }
+  .panel ul { list-style: none; margin: 0 0 12px; padding: 0; }
+  .panel li button { width: 100%; text-align: left; background: #2c2c2c; color: #fff; margin-bottom: 6px; }
+  .panel label { display: block; margin-bottom: 14px; }
+  .panel input { font: inherit; width: 100%; padding: 10px; margin-top: 4px; border-radius: 8px; border: 1px solid #555; background: #000; color: #fff; }
+  .row { display: flex; gap: 8px; }
+  .row button { flex: 1; }
+  #start { position: fixed; inset: 0; display: flex; flex-direction: column; justify-content: center; padding: 24px; gap: 16px; background: #111; }
+  #start h1 { margin: 0; }
+  #toast { position: fixed; left: 50%; top: 70px; transform: translateX(-50%); background: var(--bg); padding: 8px 14px; border-radius: 8px; display: none; }
+  #landscape { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; background: #111; font-size: 20px; padding: 24px; text-align: center; }
+  @media (orientation: landscape) { #landscape { display: flex; } }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<video id="cam" playsinline muted autoplay></video>
+<canvas id="overlay" aria-hidden="true"></canvas>
+<div id="cross"></div>
+<div id="status" role="status">Esperando GPS…</div>
+<div id="toast" role="alert"></div>
+
+<div id="bar">
+  <button id="btnCal">Calibrar</button>
+  <button id="btnSet" class="sec">Ajustes</button>
+</div>
+
+<section id="calPanel" class="panel" hidden aria-label="Calibrar brújula">
+  <h2>Calibrar brújula</h2>
+  <p>Pon la mira amarilla sobre un lugar que conozcas. Sin mover el teléfono, tócalo en la lista.</p>
+  <ul id="calList"></ul>
+  <div class="row">
+    <button id="calReset" class="sec">Borrar calibración</button>
+    <button id="calClose" class="sec">Cerrar</button>
+  </div>
+</section>
+
+<section id="setPanel" class="panel" hidden aria-label="Ajustes">
+  <h2>Ajustes</h2>
+  <label>Piso en el que estás
+    <input id="inFloor" type="number" min="0" max="100" step="1" inputmode="numeric">
+  </label>
+  <label>Altura del suelo (m sobre el nivel del mar). Se llena sola con el GPS.
+    <input id="inGround" type="number" min="0" max="5000" step="1" inputmode="numeric">
+  </label>
+  <label>Campo de visión de la cámara: <span id="fovOut"></span>°
+    <input id="inFov" type="range" min="35" max="100" step="1">
+  </label>
+  <p>Si las etiquetas se separan más (o menos) que los lugares reales, mueve el campo de visión hasta que coincidan.</p>
+  <button id="setClose" class="sec">Cerrar</button>
+</section>
+
+<div id="start">
+  <h1>Visor GDL</h1>
+  <p>Apunta la cámara al horizonte y verás los nombres de edificios y montañas.</p>
+  <p>Necesita cámara, ubicación y brújula. Funciona mejor en Chrome para Android.</p>
+  <button id="btnStart">Iniciar</button>
+</div>
+
+<div id="landscape">Gira el teléfono a vertical.</div>
+
+<script type="module">
+import { distBearing, elevAngle, dirVector, cameraBasis, headingPitch, project, smoothBasis } from "./geo.js";
+import { LANDMARKS } from "./landmarks.js";
+
+const FLOOR_HEIGHT = 3.2;   // m por piso
+const EYE_HEIGHT = 1.6;     // m sobre la azotea
+const DECLINATION = 3.8;    // declinación magnética en GDL (aprox, grados al este). La calibración la corrige.
+const $ = (id) => document.getElementById(id);
+
+// --- Ajustes guardados (pueden fallar en modo incógnito) ---
+const store = {
+  get(k, d) { try { const v = localStorage.getItem("visor." + k); return v == null ? d : JSON.parse(v); } catch { return d; } },
+  set(k, v) { try { localStorage.setItem("visor." + k, JSON.stringify(v)); } catch {} },
+};
+const cfg = {
+  corr: store.get("corr", DECLINATION), // grados a sumar al rumbo magnético para obtener el real
+  floor: store.get("floor", 27),
+  fov: store.get("fov", 65),            // grados, lado largo de la imagen de la cámara
+  ground: null,                         // m, del servicio de elevación o del usuario
+};
+
+let pos = null;        // { lat, lon, acc }
+let basis = null;      // orientación suavizada
+let items = [];        // puntos con distancia, rumbo y ángulo vertical
+let groundFor = null;  // dónde se pidió la altura del suelo
+
+const viewerAlt = () => (cfg.ground ?? 1560) + cfg.floor * FLOOR_HEIGHT + EYE_HEIGHT;
+
+function recompute() {
+  if (!pos) return;
+  const h0 = viewerAlt();
+  items = LANDMARKS.map((l) => {
+    const { dist, bearing } = distBearing(pos.lat, pos.lon, l.lat, l.lon);
+    return { ...l, dist, bearing, el: elevAngle(h0, l.alt, dist) };
+  }).filter((l) => l.dist > 150);
+}
+
+async function fetchGround(lat, lon) {
+  groundFor = { lat, lon };
+  try {
+    const r = await fetch(`https://api.open-meteo.com/v1/elevation?latitude=${lat.toFixed(5)}&longitude=${lon.toFixed(5)}`);
+    const e = (await r.json()).elevation?.[0];
+    if (Number.isFinite(e) && store.get("groundManual", null) == null) { cfg.ground = e; $("inGround").value = Math.round(e); recompute(); }
+  } catch { toast("Sin conexión: usa Ajustes para poner la altura del suelo."); }
+}
+
+function onPosition(p) {
+  pos = { lat: p.coords.latitude, lon: p.coords.longitude, acc: p.coords.accuracy };
+  const moved = groundFor ? distBearing(groundFor.lat, groundFor.lon, pos.lat, pos.lon).dist : Infinity;
+  if (moved > 200) fetchGround(pos.lat, pos.lon);
+  recompute();
+}
+
+let lastSensor = 0;
+function onOrientation(e) {
+  if (e.alpha == null) return;
+  lastSensor = performance.now();
+  basis = smoothBasis(basis, cameraBasis(e.alpha, e.beta, e.gamma), 0.15);
+}
+
+// --- Dibujo ---
+const cv = $("overlay"), ctx = cv.getContext("2d"), video = $("cam");
+function resize() {
+  const dpr = devicePixelRatio || 1;
+  cv.width = innerWidth * dpr; cv.height = innerHeight * dpr;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+addEventListener("resize", resize); resize();
+
+// Distancia focal en píxeles CSS, según el campo de visión y el recorte "cover" del video.
+function focal() {
+  const W = innerWidth, H = innerHeight;
+  const vw = video.videoWidth || W, vh = video.videoHeight || H;
+  const fVid = Math.max(vw, vh) / 2 / Math.tan((cfg.fov * Math.PI) / 360);
+  return fVid * Math.max(W / vw, H / vh);
+}
+
+const CARD = ["N", "NE", "E", "SE", "S", "SO", "O", "NO"];
+const fmtKm = (m) => (m < 10000 ? (m / 1000).toFixed(1) : Math.round(m / 1000)) + " km";
+
+function draw() {
+  requestAnimationFrame(draw);
+  const W = innerWidth, H = innerHeight;
+  ctx.clearRect(0, 0, W, H);
+  if (!basis) {
+    if (lastSensor === 0 && performance.now() > 3000) $("status").textContent = "Este navegador no da la brújula. Usa Chrome en Android.";
+    return;
+  }
+  const { heading } = headingPitch(basis);
+  const trueHeading = (heading + cfg.corr + 360) % 360;
+  $("status").textContent = pos
+    ? `${Math.round(trueHeading)}° ${CARD[Math.round(trueHeading / 45) % 8]} · ${Math.round(viewerAlt())} msnm · GPS ±${Math.round(pos.acc)} m`
+    : "Esperando GPS…";
+  if (!pos) return;
+
+  const f = focal(), cx = W / 2, cy = H / 2;
+  const shown = [];
+  for (const l of items) {
+    const p = project(dirVector(l.bearing - cfg.corr, l.el), basis, f, cx, cy);
+    if (p && p.x > -40 && p.x < W + 40) shown.push({ l, p });
+  }
+
+  // Etiquetas en filas para que no se encimen. Las más cercanas al centro van abajo.
+  ctx.font = "600 15px system-ui, sans-serif";
+  ctx.textBaseline = "middle";
+  shown.sort((a, b) => Math.abs(a.p.x - cx) - Math.abs(b.p.x - cx));
+  const rows = [];
+  for (const s of shown) {
+    const text = `${s.l.nombre} · ${fmtKm(s.l.dist)}`;
+    const w = ctx.measureText(text).width + 16;
+    const x0 = Math.min(Math.max(s.p.x - w / 2, 4), W - w - 4);
+    let r = 0;
+    while ((rows[r] ||= []).some(([a, b]) => x0 < b + 4 && x0 + w > a - 4)) r++;
+    rows[r].push([x0, x0 + w]);
+    const ay = Math.min(Math.max(s.p.y, 90), H - 90);
+    const ly = Math.max(ay - 34 - r * 30, 60);
+    const color = s.l.tipo === "m" ? "#9be7a1" : "#ffd54a";
+
+    ctx.strokeStyle = color; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(s.p.x, ay); ctx.lineTo(s.p.x, ly + 12); ctx.stroke();
+    ctx.fillStyle = color;
+    ctx.beginPath(); ctx.arc(s.p.x, ay, 4, 0, 7); ctx.fill();
+    ctx.fillStyle = "rgba(0,0,0,.72)";
+    ctx.beginPath(); ctx.roundRect(x0, ly - 12, w, 24, 6); ctx.fill();
+    ctx.fillStyle = color;
+    ctx.fillText(text, x0 + 8, ly);
+  }
+}
+
+// --- Calibración ---
+function openCal() {
+  const list = $("calList"); list.innerHTML = "";
+  if (!pos || !basis) { toast("Espera a tener GPS y brújula."); return; }
+  for (const l of [...items].sort((a, b) => a.dist - b.dist)) {
+    const li = document.createElement("li"), b = document.createElement("button");
+    b.textContent = `${l.nombre} · ${fmtKm(l.dist)}`;
+    b.onclick = () => {
+      const { heading } = headingPitch(basis);
+      cfg.corr = ((l.bearing - heading + 540) % 360) - 180;
+      store.set("corr", cfg.corr);
+      $("calPanel").hidden = true;
+      toast(`Calibrado con ${l.nombre} (${cfg.corr.toFixed(1)}°)`);
+    };
+    li.append(b); list.append(li);
+  }
+  $("calPanel").hidden = false;
+}
+
+let toastTimer;
+function toast(msg) {
+  const t = $("toast"); t.textContent = msg; t.style.display = "block";
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => (t.style.display = "none"), 3500);
+}
+
+// --- Ajustes ---
+$("inFloor").value = cfg.floor;
+$("inFov").value = cfg.fov; $("fovOut").textContent = cfg.fov;
+const manualGround = store.get("groundManual", null);
+if (manualGround != null) { cfg.ground = manualGround; $("inGround").value = manualGround; }
+$("inFloor").oninput = (e) => { const v = Number(e.target.value); if (v >= 0 && v <= 100) { cfg.floor = v; store.set("floor", v); recompute(); } };
+$("inGround").oninput = (e) => {
+  const v = e.target.value === "" ? null : Number(e.target.value);
+  if (v == null) { store.set("groundManual", null); if (pos) fetchGround(pos.lat, pos.lon); return; }
+  if (v >= 0 && v <= 5000) { cfg.ground = v; store.set("groundManual", v); recompute(); }
+};
+$("inFov").oninput = (e) => { cfg.fov = Number(e.target.value); $("fovOut").textContent = cfg.fov; store.set("fov", cfg.fov); };
+$("btnCal").onclick = openCal;
+$("calClose").onclick = () => ($("calPanel").hidden = true);
+$("calReset").onclick = () => { cfg.corr = DECLINATION; store.set("corr", cfg.corr); toast("Calibración borrada"); };
+$("btnSet").onclick = () => ($("setPanel").hidden = false);
+$("setClose").onclick = () => ($("setPanel").hidden = true);
+
+// --- Arranque ---
+// ?sim=lat,lon,rumbo,inclinación  prueba en computadora sin sensores ni cámara.
+const sim = new URLSearchParams(location.search).get("sim")?.split(",").map(Number);
+
+$("btnStart").onclick = async () => {
+  $("start").hidden = true;
+  draw();
+  if (sim) {
+    const [lat, lon, h, p] = sim;
+    cfg.corr = 0;
+    onPosition({ coords: { latitude: lat, longitude: lon, accuracy: 0 } });
+    basis = cameraBasis(-h, 90 + p, 0);
+    return;
+  }
+  try {
+    video.srcObject = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: { ideal: "environment" }, width: { ideal: 1920 }, height: { ideal: 1080 } }, audio: false,
+    });
+  } catch { toast("Sin cámara. Revisa los permisos del navegador."); }
+  navigator.geolocation.watchPosition(onPosition, () => toast("Sin ubicación. Revisa los permisos."),
+    { enableHighAccuracy: true, maximumAge: 5000 });
+  if ("ondeviceorientationabsolute" in window) addEventListener("deviceorientationabsolute", onOrientation);
+  else addEventListener("deviceorientation", (e) => e.absolute && onOrientation(e));
+  try { await navigator.wakeLock?.request("screen"); } catch {}
+};
+if (sim) $("btnStart").click();
+</script>
+</body>
+</html>
