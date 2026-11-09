@@ -1,6 +1,6 @@
 // Run: node check.mjs   (fails loudly if the geometry breaks)
 import assert from "node:assert/strict";
-import { distBearing, elevAngle, dirVector, cameraBasis, headingPitch, project } from "./geo.js";
+import { distBearing, elevAngle, dirVector, cameraBasis, headingPitch, project, destination, rayMax } from "./geo.js";
 import { LANDMARKS } from "./landmarks.js";
 
 const near = (a, b, tol, msg) => assert.ok(Math.abs(a - b) <= tol, `${msg}: ${a} vs ${b}`);
@@ -35,10 +35,30 @@ assert.equal(project(dirVector(225, 0), basis, 1000, 200, 400), null, "behind ca
 pt = project(dirVector(0, 0), cameraBasis(0, 90, 0), 1000, 200, 400);
 near(pt.x, 200, 1e-6, "roll-free centre");
 
+// Terrain: a cone 1000 m high, 5 km radius, centred 20 km due north of the viewer, flat ground elsewhere.
+const peak = destination(20, -103, 0, 20000);
+near(distBearing(20, -103, peak.lat, peak.lon).dist, 20000, 1, "destination dist");
+const cone = (lat, lon) => Math.max(0, 1000 * (1 - distBearing(peak.lat, peak.lon, lat, lon).dist / 5000));
+let ray = rayMax(cone, 20, -103, 0, 0, 500, 60000);
+near(ray.angle, elevAngle(0, 1000, 20000), 0.05, "ray finds cone top");
+near(ray.dist, 20000, 300, "ray cone distance");
+ray = rayMax(cone, 20, -103, 0, 90, 500, 60000);
+assert.ok(ray.angle < 0.01 && ray.dist < 1000, "flat ground east stays at horizon");
+// A 500 m point 40 km north sits behind the cone; a 3000 m one shows above it.
+assert.ok(rayMax(cone, 20, -103, 0, 0, 500, 38000).angle > elevAngle(0, 500, 40000), "hidden behind cone");
+assert.ok(rayMax(cone, 20, -103, 0, 0, 500, 38000).angle < elevAngle(0, 3000, 40000), "visible above cone");
+
+// Full skyline (720 rays to 135 km) must stay fast enough to run on a phone.
+const t0 = performance.now();
+for (let az = 0; az < 360; az += 0.5) rayMax(() => 1500, 20.68, -103.39, 1690, az, 500, 135000);
+const ms = performance.now() - t0;
+assert.ok(ms < 1000, `skyline too slow: ${ms.toFixed(0)} ms`);
+
 // Landmark data sanity: inside a box around Jalisco, plausible heights.
 for (const l of LANDMARKS) {
   assert.ok(l.lat > 19 && l.lat < 21.5 && l.lon > -104.5 && l.lon < -102.5, `${l.nombre} coords`);
   assert.ok(l.alt > 1400 && l.alt < 4500, `${l.nombre} alt`);
+  if (l.tipo === "e") assert.ok(l.h > 0 && l.h < 300 && l.w > 0 && l.w < 400, `${l.nombre} h/w`);
 }
 
-console.log("ok");
+console.log(`ok (skyline ${ms.toFixed(0)} ms)`);

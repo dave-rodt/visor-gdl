@@ -58,6 +58,27 @@ export function project(dir, basis, f, cx, cy) {
   return { x: cx + (dot(dir, basis.right) / z) * f, y: cy - (dot(dir, basis.up) / z) * f };
 }
 
+// Point reached from (lat, lon) going `dist` metres along `bearing` (deg).
+export function destination(lat, lon, bearing, dist) {
+  const p1 = rad(lat), l1 = rad(lon), b = rad(bearing), d = dist / R_EARTH;
+  const p2 = Math.asin(Math.sin(p1) * Math.cos(d) + Math.cos(p1) * Math.sin(d) * Math.cos(b));
+  const l2 = l1 + Math.atan2(Math.sin(b) * Math.sin(d) * Math.cos(p1), Math.cos(d) - Math.sin(p1) * Math.sin(p2));
+  return { lat: deg(p2), lon: deg(l2) };
+}
+
+// Highest terrain angle seen along one azimuth between `from` and `to` metres.
+// sample(lat, lon, dist) returns ground elevation in metres (NaN where unknown).
+// Steps grow with distance: ~150 m near, 0.5% of the distance far away.
+export function rayMax(sample, lat, lon, h0, az, from, to) {
+  let angle = -90, dist = 0;
+  for (let d = from; d <= to; d += Math.max(150, d * 0.005)) {
+    const p = destination(lat, lon, az, d);
+    const a = elevAngle(h0, sample(p.lat, p.lon, d), d);
+    if (a > angle) { angle = a; dist = d; }
+  }
+  return { angle, dist };
+}
+
 // Blend two bases to smooth sensor jitter (k = weight of the new sample), then renormalise.
 export function smoothBasis(prev, next, k) {
   if (!prev) return next;

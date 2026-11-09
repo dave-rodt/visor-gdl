@@ -19,16 +19,23 @@
          padding: 10px 12px max(10px, env(safe-area-inset-bottom)); background: var(--bg); }
   button { font: inherit; color: #000; background: var(--accent); border: 0; border-radius: 10px; padding: 12px 18px; min-height: 48px; }
   button.sec { background: #ddd; }
-  .panel { position: fixed; left: 0; right: 0; bottom: 0; max-height: 70%; overflow: auto; background: #1b1b1b;
+  .panel { position: fixed; left: 0; right: 0; bottom: 0; max-height: 75%; overflow: auto; background: #1b1b1b;
            padding: 16px 16px max(16px, env(safe-area-inset-bottom)); border-radius: 16px 16px 0 0; }
-  .panel h2 { margin: 0 0 8px; font-size: 18px; }
+  .panel h2 { margin: 0 0 8px; font-size: 20px; }
   .panel p { margin: 0 0 12px; color: #ccc; }
   .panel ul { list-style: none; margin: 0 0 12px; padding: 0; }
   .panel li button { width: 100%; text-align: left; background: #2c2c2c; color: #fff; margin-bottom: 6px; }
   .panel label { display: block; margin-bottom: 14px; }
   .panel input { font: inherit; width: 100%; padding: 10px; margin-top: 4px; border-radius: 8px; border: 1px solid #555; background: #000; color: #fff; }
+  .panel a { color: var(--accent); }
   .row { display: flex; gap: 8px; }
   .row button { flex: 1; }
+  #infoMeta { color: #aaa; font-size: 14px; }
+  #infoText { color: #eee; }
+  #gallery { display: flex; gap: 8px; overflow-x: auto; margin: 0 -16px 12px; padding: 0 16px; scroll-snap-type: x mandatory; }
+  #gallery a { flex: 0 0 auto; scroll-snap-align: start; }
+  #gallery img { display: block; height: 180px; width: auto; max-width: 80vw; object-fit: cover; border-radius: 8px; background: #333; }
+  #infoCredit { font-size: 12px; color: #888; }
   #start { position: fixed; inset: 0; display: flex; flex-direction: column; justify-content: center; padding: 24px; gap: 16px; background: #111; }
   #start h1 { margin: 0; }
   #toast { position: fixed; left: 50%; top: 70px; transform: translateX(-50%); background: var(--bg); padding: 8px 14px; border-radius: 8px; display: none; }
@@ -39,7 +46,7 @@
 </head>
 <body>
 <video id="cam" playsinline muted autoplay></video>
-<canvas id="overlay" aria-hidden="true"></canvas>
+<canvas id="overlay"></canvas>
 <div id="cross"></div>
 <div id="status" role="status">Esperando GPS…</div>
 <div id="toast" role="alert"></div>
@@ -48,6 +55,16 @@
   <button id="btnCal">Calibrar</button>
   <button id="btnSet" class="sec">Ajustes</button>
 </div>
+
+<section id="infoPanel" class="panel" hidden aria-label="Detalles del lugar">
+  <h2 id="infoName"></h2>
+  <p id="infoMeta"></p>
+  <div id="gallery"></div>
+  <p id="infoText"></p>
+  <p id="infoLink"></p>
+  <p id="infoCredit"></p>
+  <button id="infoClose" class="sec">Cerrar</button>
+</section>
 
 <section id="calPanel" class="panel" hidden aria-label="Calibrar brújula">
   <h2>Calibrar brújula</h2>
@@ -76,20 +93,23 @@
 
 <div id="start">
   <h1>Visor GDL</h1>
-  <p>Apunta la cámara al horizonte y verás los nombres de edificios y montañas.</p>
-  <p>Necesita cámara, ubicación y brújula. Funciona mejor en Chrome para Android.</p>
+  <p>Apunta la cámara al horizonte y verás los nombres de edificios y montañas. Toca un nombre para ver fotos y detalles.</p>
+  <p>Necesita cámara, ubicación, brújula y datos móviles. Funciona mejor en Chrome para Android.</p>
   <button id="btnStart">Iniciar</button>
 </div>
 
 <div id="landscape">Gira el teléfono a vertical.</div>
 
 <script type="module">
-import { distBearing, elevAngle, dirVector, cameraBasis, headingPitch, project, smoothBasis } from "./geo.js";
+import { distBearing, elevAngle, dirVector, cameraBasis, headingPitch, project, smoothBasis, rayMax } from "./geo.js";
+import { loadArea, elevation } from "./terrain.js";
 import { LANDMARKS } from "./landmarks.js";
 
 const FLOOR_HEIGHT = 3.2;   // m por piso
 const EYE_HEIGHT = 1.6;     // m sobre la azotea
 const DECLINATION = 3.8;    // declinación magnética en GDL (aprox, grados al este). La calibración la corrige.
+const NEAR_ZOOM_M = 40000;  // relieve fino (zoom 10) hasta 40 km, grueso (zoom 8) hasta 135 km
+const FAR_M = 135000;
 const $ = (id) => document.getElementById(id);
 
 // --- Ajustes guardados (pueden fallar en modo incógnito) ---
@@ -101,40 +121,73 @@ const cfg = {
   corr: store.get("corr", DECLINATION), // grados a sumar al rumbo magnético para obtener el real
   floor: store.get("floor", 27),
   fov: store.get("fov", 65),            // grados, lado largo de la imagen de la cámara
-  ground: null,                         // m, del servicio de elevación o del usuario
+  ground: store.get("groundManual", null),
 };
 
 let pos = null;        // { lat, lon, acc }
 let basis = null;      // orientación suavizada
-let items = [];        // puntos con distancia, rumbo y ángulo vertical
-let groundFor = null;  // dónde se pidió la altura del suelo
+let items = [];        // puntos con distancia, rumbo, ángulo vertical y silueta
+let skyline = null;    // [{ az, angle, dist }] cada 0.5°
+let reliefFor = null;  // dónde se cargó el relieve
+let reliefReady = false;
 
 const viewerAlt = () => (cfg.ground ?? 1560) + cfg.floor * FLOOR_HEIGHT + EYE_HEIGHT;
+const sample = (lat, lon, d) => {
+  const e = d < NEAR_ZOOM_M ? elevation(lat, lon, 10) : NaN;
+  return Number.isNaN(e) ? elevation(lat, lon, 8) : e;
+};
 
 function recompute() {
   if (!pos) return;
   const h0 = viewerAlt();
+  if (reliefReady) {
+    skyline = [];
+    for (let az = 0; az < 360; az += 0.5) skyline.push({ az, ...rayMax(sample, pos.lat, pos.lon, h0, az, 500, FAR_M) });
+  }
   items = LANDMARKS.map((l) => {
     const { dist, bearing } = distBearing(pos.lat, pos.lon, l.lat, l.lon);
-    return { ...l, dist, bearing, el: elevAngle(h0, l.alt, dist) };
+    const it = { ...l, dist, bearing, el: elevAngle(h0, l.alt, dist) };
+    if (reliefReady) {
+      // Oculto si el relieve entre tú y el punto sube más que su punta.
+      it.hidden = rayMax(sample, pos.lat, pos.lon, h0, bearing, 500, dist * 0.95).angle > it.el + 0.3;
+      if (l.tipo === "m" && !it.hidden) it.ridge = ridgeOf(it);
+    }
+    return it;
   }).filter((l) => l.dist > 150);
 }
 
-async function fetchGround(lat, lon) {
-  groundFor = { lat, lon };
-  try {
-    const r = await fetch(`https://api.open-meteo.com/v1/elevation?latitude=${lat.toFixed(5)}&longitude=${lon.toFixed(5)}`);
-    const e = (await r.json()).elevation?.[0];
-    if (Number.isFinite(e) && store.get("groundManual", null) == null) { cfg.ground = e; $("inGround").value = Math.round(e); recompute(); }
-  } catch { toast("Sin conexión: usa Ajustes para poner la altura del suelo."); }
+// Tramo del horizonte alrededor de la cumbre que pertenece a esa montaña:
+// se extiende mientras el horizonte esté a una distancia parecida (±30%), hasta ±8°.
+function ridgeOf(l) {
+  const n = skyline.length, i0 = Math.round(l.bearing * 2) % n;
+  const same = (i) => Math.abs(skyline[(i + n) % n].dist - l.dist) < l.dist * 0.3;
+  let a = i0, b = i0;
+  while (b - i0 < 16 && same(b + 1)) b++;
+  while (i0 - a < 16 && same(a - 1)) a--;
+  const pts = [];
+  for (let i = a; i <= b; i++) pts.push(skyline[(i + n) % n]);
+  return pts.length > 1 ? pts : null;
+}
+
+async function loadRelief(lat, lon) {
+  reliefFor = { lat, lon };
+  reliefReady = false;
+  await Promise.all([loadArea(lat, lon, 200, 12), loadArea(lat, lon, NEAR_ZOOM_M, 10), loadArea(lat, lon, FAR_M, 8)]);
+  const g = elevation(lat, lon, 12);
+  if (store.get("groundManual", null) == null && Number.isFinite(g)) { cfg.ground = Math.round(g); $("inGround").value = cfg.ground; }
+  if (!Number.isFinite(g)) toast("No se pudo cargar el relieve. Revisa tus datos móviles.");
+  reliefReady = true;
+  recompute();
 }
 
 function onPosition(p) {
   pos = { lat: p.coords.latitude, lon: p.coords.longitude, acc: p.coords.accuracy };
-  const moved = groundFor ? distBearing(groundFor.lat, groundFor.lon, pos.lat, pos.lon).dist : Infinity;
-  if (moved > 200) fetchGround(pos.lat, pos.lon);
-  recompute();
+  const moved = reliefFor ? distBearing(reliefFor.lat, reliefFor.lon, pos.lat, pos.lon).dist : Infinity;
+  if (moved > 300) loadRelief(pos.lat, pos.lon);
+  // El horizonte cuesta ~0.2 s; solo se recalcula si te moviste más de 30 m.
+  if (!calcFor || distBearing(calcFor.lat, calcFor.lon, pos.lat, pos.lon).dist > 30) { calcFor = pos; recompute(); }
 }
+let calcFor = null;
 
 let lastSensor = 0;
 function onOrientation(e) {
@@ -161,46 +214,90 @@ function focal() {
 }
 
 const CARD = ["N", "NE", "E", "SE", "S", "SO", "O", "NO"];
+const card = (az) => CARD[Math.round(az / 45) % 8];
 const fmtKm = (m) => (m < 10000 ? (m / 1000).toFixed(1) : Math.round(m / 1000)) + " km";
+let hits = []; // rectángulos de etiquetas para detectar toques
+
+// Polilínea de puntos del horizonte; se corta donde no hay punto visible.
+function strokeLine(pts, f, cx, cy, color, width) {
+  ctx.beginPath();
+  let pen = false;
+  for (const s of pts) {
+    const p = s && project(dirVector(s.az - cfg.corr, s.angle), basis, f, cx, cy);
+    if (!p) { pen = false; continue; }
+    pen ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y);
+    pen = true;
+  }
+  ctx.lineJoin = "round";
+  ctx.strokeStyle = "rgba(0,0,0,.6)"; ctx.lineWidth = width + 2; ctx.stroke();
+  ctx.strokeStyle = color; ctx.lineWidth = width; ctx.stroke();
+}
+
+// Contorno de un edificio: rectángulo de su ancho y alto reales, del suelo a la punta.
+function strokeBuilding(l, f, cx, cy) {
+  const half = (Math.atan2(l.w / 2, l.dist) * 180) / Math.PI;
+  const base = elevAngle(viewerAlt(), l.alt - l.h, l.dist);
+  const corners = [[-half, base], [-half, l.el], [half, l.el], [half, base]]
+    .map(([da, el]) => project(dirVector(l.bearing - cfg.corr + da, el), basis, f, cx, cy));
+  if (corners.some((p) => !p)) return;
+  ctx.beginPath();
+  corners.forEach((p, i) => (i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)));
+  ctx.closePath();
+  ctx.fillStyle = "rgba(255,213,74,.15)"; ctx.fill();
+  ctx.strokeStyle = "#ffd54a"; ctx.lineWidth = 1.5; ctx.stroke();
+}
 
 function draw() {
   requestAnimationFrame(draw);
   const W = innerWidth, H = innerHeight;
   ctx.clearRect(0, 0, W, H);
+  hits = [];
   if (!basis) {
     if (lastSensor === 0 && performance.now() > 3000) $("status").textContent = "Este navegador no da la brújula. Usa Chrome en Android.";
     return;
   }
   const { heading } = headingPitch(basis);
   const trueHeading = (heading + cfg.corr + 360) % 360;
-  $("status").textContent = pos
-    ? `${Math.round(trueHeading)}° ${CARD[Math.round(trueHeading / 45) % 8]} · ${Math.round(viewerAlt())} msnm · GPS ±${Math.round(pos.acc)} m`
-    : "Esperando GPS…";
+  $("status").textContent = !pos ? "Esperando GPS…"
+    : `${Math.round(trueHeading)}° ${card(trueHeading)} · ${Math.round(viewerAlt())} msnm · GPS ±${Math.round(pos.acc)} m` + (reliefReady ? "" : " · cargando relieve…");
   if (!pos) return;
 
   const f = focal(), cx = W / 2, cy = H / 2;
+
+  // Horizonte completo (blanco) y silueta de cada montaña (verde). Se omite el suelo cercano.
+  if (skyline) {
+    const far = skyline.map((s) => (s.dist > 1500 ? s : null));
+    strokeLine([...far, far[0]], f, cx, cy, "rgba(255,255,255,.55)", 1.2);
+  }
+
   const shown = [];
   for (const l of items) {
     const p = project(dirVector(l.bearing - cfg.corr, l.el), basis, f, cx, cy);
-    if (p && p.x > -40 && p.x < W + 40) shown.push({ l, p });
+    if (!p || p.x < -40 || p.x > W + 40) continue;
+    if (!l.hidden) {
+      if (l.ridge) strokeLine(l.ridge, f, cx, cy, "#9be7a1", 3);
+      if (l.tipo === "e") strokeBuilding(l, f, cx, cy);
+    }
+    shown.push({ l, p });
   }
 
   // Etiquetas en filas para que no se encimen. Las más cercanas al centro van abajo.
   ctx.font = "600 15px system-ui, sans-serif";
   ctx.textBaseline = "middle";
   shown.sort((a, b) => Math.abs(a.p.x - cx) - Math.abs(b.p.x - cx));
-  const rows = [];
+  const placed = [];
   for (const s of shown) {
-    const text = `${s.l.nombre} · ${fmtKm(s.l.dist)}`;
+    const text = `${s.l.nombre} · ${fmtKm(s.l.dist)}${s.l.hidden ? " · oculto" : ""}`;
     const w = ctx.measureText(text).width + 16;
     const x0 = Math.min(Math.max(s.p.x - w / 2, 4), W - w - 4);
-    let r = 0;
-    while ((rows[r] ||= []).some(([a, b]) => x0 < b + 4 && x0 + w > a - 4)) r++;
-    rows[r].push([x0, x0 + w]);
     const ay = Math.min(Math.max(s.p.y, 90), H - 90);
-    const ly = Math.max(ay - 34 - r * 30, 60);
+    // Sube la etiqueta de 30 en 30 px hasta que no choque con otra.
+    let ly = ay - 34;
+    while (ly > 60 && placed.some(([a, b, y]) => x0 < b + 4 && x0 + w > a - 4 && Math.abs(ly - y) < 28)) ly -= 30;
+    placed.push([x0, x0 + w, ly]);
     const color = s.l.tipo === "m" ? "#9be7a1" : "#ffd54a";
 
+    ctx.globalAlpha = s.l.hidden ? 0.5 : 1;
     ctx.strokeStyle = color; ctx.lineWidth = 1.5;
     ctx.beginPath(); ctx.moveTo(s.p.x, ay); ctx.lineTo(s.p.x, ly + 12); ctx.stroke();
     ctx.fillStyle = color;
@@ -209,8 +306,64 @@ function draw() {
     ctx.beginPath(); ctx.roundRect(x0, ly - 12, w, 24, 6); ctx.fill();
     ctx.fillStyle = color;
     ctx.fillText(text, x0 + 8, ly);
+    ctx.globalAlpha = 1;
+    hits.push({ l: s.l, x0: x0 - 4, x1: x0 + w + 4, y0: ly - 18, y1: ly + 18 });
   }
 }
+
+// --- Detalles (Wikipedia en español) ---
+const wikiCache = new Map();
+function wiki(title) {
+  if (!wikiCache.has(title)) {
+    const t = encodeURIComponent(title.replaceAll(" ", "_"));
+    const get = (path) => fetch(`https://es.wikipedia.org/api/rest_v1/page/${path}/${t}`).then((r) => (r.ok ? r.json() : null));
+    wikiCache.set(title, Promise.all([get("summary"), get("media-list")])
+      .then(([s, m]) => ({ s, m }))
+      .catch(() => { wikiCache.delete(title); return null; }));
+  }
+  return wikiCache.get(title);
+}
+
+const absUrl = (u) => (u.startsWith("//") ? "https:" + u : u);
+let infoFor = null;
+
+async function openInfo(l) {
+  infoFor = l;
+  $("infoName").textContent = l.nombre;
+  $("infoMeta").textContent = `${l.tipo === "m" ? "Montaña" : "Edificio"} · ${Math.round(l.alt).toLocaleString("es-MX")} msnm · ${fmtKm(l.dist)} al ${card(l.bearing)}`;
+  $("gallery").replaceChildren();
+  $("infoText").textContent = l.wiki ? "Cargando…" : "";
+  $("infoCredit").textContent = "";
+  const link = document.createElement("a");
+  link.target = "_blank"; link.rel = "noopener";
+  link.href = l.wiki ? `https://es.wikipedia.org/wiki/${encodeURIComponent(l.wiki.replaceAll(" ", "_"))}`
+                     : `https://es.wikipedia.org/w/index.php?search=${encodeURIComponent(l.nombre + " Jalisco")}`;
+  link.textContent = l.wiki ? "Leer más en Wikipedia" : "Buscar en Wikipedia";
+  $("infoLink").replaceChildren(link);
+  $("infoPanel").hidden = false;
+  if (!l.wiki) return;
+
+  const data = await wiki(l.wiki);
+  if (infoFor !== l) return; // el usuario ya abrió otro
+  if (!data?.s) { $("infoText").textContent = "No se pudo cargar la información. Revisa tus datos móviles."; return; }
+  $("infoText").textContent = data.s.extract || "";
+  const imgs = (data.m?.items || []).filter((i) => i.type === "image" && i.showInGallery && i.srcset?.length).slice(0, 8);
+  if (!imgs.length && data.s.thumbnail) imgs.push({ srcset: [{ src: data.s.thumbnail.source }], caption: null });
+  for (const i of imgs) {
+    const a = document.createElement("a"), img = document.createElement("img");
+    a.href = absUrl(i.srcset.at(-1).src); a.target = "_blank"; a.rel = "noopener";
+    img.src = absUrl(i.srcset[0].src); img.loading = "lazy";
+    img.alt = i.caption?.text || l.nombre;
+    a.append(img); $("gallery").append(a);
+  }
+  $("infoCredit").textContent = "Texto e imágenes: Wikipedia y Wikimedia Commons (CC BY-SA).";
+}
+
+cv.addEventListener("click", (e) => {
+  const h = hits.find((h) => e.clientX >= h.x0 && e.clientX <= h.x1 && e.clientY >= h.y0 && e.clientY <= h.y1);
+  if (h) openInfo(h.l);
+});
+$("infoClose").onclick = () => { $("infoPanel").hidden = true; infoFor = null; };
 
 // --- Calibración ---
 function openCal() {
@@ -240,12 +393,11 @@ function toast(msg) {
 // --- Ajustes ---
 $("inFloor").value = cfg.floor;
 $("inFov").value = cfg.fov; $("fovOut").textContent = cfg.fov;
-const manualGround = store.get("groundManual", null);
-if (manualGround != null) { cfg.ground = manualGround; $("inGround").value = manualGround; }
-$("inFloor").oninput = (e) => { const v = Number(e.target.value); if (v >= 0 && v <= 100) { cfg.floor = v; store.set("floor", v); recompute(); } };
-$("inGround").oninput = (e) => {
-  const v = e.target.value === "" ? null : Number(e.target.value);
-  if (v == null) { store.set("groundManual", null); if (pos) fetchGround(pos.lat, pos.lon); return; }
+if (cfg.ground != null) $("inGround").value = cfg.ground;
+$("inFloor").onchange = (e) => { const v = Number(e.target.value); if (v >= 0 && v <= 100) { cfg.floor = v; store.set("floor", v); recompute(); } };
+$("inGround").onchange = (e) => {
+  if (e.target.value === "") { store.set("groundManual", null); if (pos) loadRelief(pos.lat, pos.lon); return; }
+  const v = Number(e.target.value);
   if (v >= 0 && v <= 5000) { cfg.ground = v; store.set("groundManual", v); recompute(); }
 };
 $("inFov").oninput = (e) => { cfg.fov = Number(e.target.value); $("fovOut").textContent = cfg.fov; store.set("fov", cfg.fov); };
