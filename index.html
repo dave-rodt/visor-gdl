@@ -165,14 +165,14 @@
   <div class="grip"></div>
   <div class="body">
     <h2 id="calTitle">¿Cómo calibrar?</h2>
-    <p>Calibrar hace que los nombres caigan justo sobre cada lugar. Después puedes arrastrar la vista con el dedo para afinar.</p>
+    <p>Esto alinea los nombres con lo que ves. Toma un minuto.</p>
     <button id="calWhere" class="btn"></button>
     <label class="floor">¿En qué piso estás? <input id="calFloor" type="number" min="0" max="100" step="1" inputmode="numeric"></label>
     <p id="calGps" class="warnTxt" hidden></p>
-    <button id="calGuided" class="btn opt">Con edificios <small>Recomendado</small><small class="d">Toca la punta del Hotel Riu y luego la del Fiesta Americana. Lo más preciso.</small></button>
-    <button id="calSky" class="btn opt">Con el horizonte<small class="d">Apunta a cerros o torres altas contra el cielo; la cámara busca su borde sola. Necesita buena vista.</small></button>
-    <button id="calAny" class="btn opt">Tocar cualquier lugar<small class="d">Toca algo que reconozcas y elige su nombre en la lista.</small></button>
-    <button id="calNone" class="btn opt">Solo GPS y brújula<small class="d">Borra la calibración y el zoom guardados y usa la brújula tal cual. Úsalo si quedó mal calibrado.</small></button>
+    <button id="calGuided" class="btn opt">Con edificios <small>Recomendado</small><small class="d">Tocas la punta de dos torres. Es lo más preciso.</small></button>
+    <button id="calSky" class="btn opt">Con el horizonte<small class="d">Apuntas a los cerros o a una torre alta y el teléfono se alinea solo. Necesita un día despejado.</small></button>
+    <button id="calAny" class="btn opt">Tocar cualquier lugar<small class="d">Tocas algo que conozcas y eliges su nombre.</small></button>
+    <button id="calNone" class="btn opt">Solo GPS y brújula<small class="d">Borra la calibración. Úsalo si los nombres quedaron muy corridos.</small></button>
     <button id="calClose" class="btn plain">Cerrar</button>
   </div>
 </section>
@@ -379,7 +379,7 @@ async function loadRelief(lat, lon) {
   await Promise.all([loadArea(lat, lon, 200, 12), loadArea(lat, lon, 40000, 10), loadArea(lat, lon, 80000, 9), loadArea(lat, lon, FAR_M, 8)]);
   const g = elevation(lat, lon, 12);
   if (store.get("groundManual", null) == null && Number.isFinite(g)) { cfg.ground = Math.round(g); $("inGround").value = cfg.ground; }
-  if (!Number.isFinite(g)) toast("No se pudo cargar el relieve. Revisa tus datos móviles.");
+  if (!Number.isFinite(g)) toast("No se pudo cargar el mapa del terreno. Revisa tus datos móviles.");
   reliefReady = true;
   recompute();
 }
@@ -683,7 +683,7 @@ function drawTarget(W, H, heading) {
 }
 
 function openFind() {
-  if (!items.length) { toast("Espera a tener GPS."); return; }
+  if (!items.length) { toast("Espera unos segundos, todavía está cargando."); return; }
   const groups = [["m", "Montañas"], ["e", "Edificios"], ["z", "Zonas y ciudades"]];
   $("findList").replaceChildren(...groups.flatMap(([tipo, title]) => [
     Object.assign(document.createElement("div"), { className: "group", textContent: title }),
@@ -729,10 +729,10 @@ $("btnShot").onclick = () => shareShot().catch(() => toast("No se pudo crear la 
 let calMode = false, calPoints = [], pending = null;
 
 function startCal() {
-  if (!pos || !basis) { toast("Espera a tener GPS y brújula."); return; }
+  if (!pos || !basis) { toast("Espera unos segundos, todavía está cargando."); return; }
   autoMode = false; calMode = true; calPoints = [];
   $("focusCard").hidden = true; $("guide").hidden = true;
-  banner("Toca en la pantalla, justo encima, un lugar que reconozcas.");
+  banner("Toca en la imagen un lugar que reconozcas.");
 }
 function endCal() {
   if (guided != null) target = null;
@@ -755,7 +755,7 @@ function openCalMenu() {
   // Dentro de un depa el GPS suele fallar por decenas de metros: los edificios cercanos salen corridos.
   const bad = pos && !pos.spot && pos.acc > 25;
   $("calGps").hidden = !bad;
-  if (bad) $("calGps").textContent = `GPS impreciso (±${Math.round(pos.acc)} m). Guarda tu lugar en el mapa (botón de arriba) o usa el horizonte, que depende menos del GPS.`;
+  if (bad) $("calGps").textContent = `Tu ubicación es imprecisa (±${Math.round(pos.acc)} m). Guarda tu lugar en el mapa con el botón de arriba.`;
   openSheet("calPanel");
 }
 $("calFloor").onchange = (e) => setFloor(e.target.value);
@@ -776,7 +776,7 @@ let guided = null; // índice en GUIA del lugar que toca ahora
 function startGuided() {
   const ok = GUIA.every((n) => { const l = items.find((i) => i.nombre === n); return l && !l.hidden && l.dist < 15000; });
   if (!ok) return startAuto(); // lejos de la azotea (o no se ven): usa el horizonte
-  if (!basis) { toast("Espera a tener la brújula."); return; }
+  if (!basis) { toast("Espera unos segundos, todavía está cargando."); return; }
   endCal();
   calMode = true; calPoints = []; guided = 0;
   $("focusCard").hidden = true;
@@ -784,7 +784,8 @@ function startGuided() {
 }
 function guideStep() {
   target = GUIA[guided]; guideMsg = ""; $("guide").hidden = false;
-  banner(`Calibrar ${guided + 1}/2: busca ${GUIA[guided]} y toca la punta real del edificio.`,
+  banner(guided === 0 ? "Paso 1 de 2: sigue la flecha hasta el Hotel Riu y toca su punta en la imagen."
+    : "Paso 2 de 2: gira hasta el Fiesta Americana. Ponlo cerca de la orilla de la pantalla y toca su punta.",
     ["Omitir", skipAuto], guided === 0 ? ["Usar horizonte", startAuto] : ["Terminar", endCal]);
 }
 
@@ -797,11 +798,11 @@ const grab = document.createElement("canvas"), gctx = grab.getContext("2d", { wi
 
 function startAuto() {
   if (!video.videoWidth) return startCal(); // sin cámara: solo a mano
-  if (!pos || !basis || !skyline) { toast("Espera a tener GPS, brújula y relieve."); return; }
+  if (!pos || !basis || !skyline) { toast("Espera unos segundos, todavía está cargando."); return; }
   endCal();
   autoMode = true; autoFails = 0; autoLast = performance.now();
   $("focusCard").hidden = true; $("guide").hidden = true;
-  banner("Calibrando: apunta hacia montañas o torres altas contra el cielo y sostén el teléfono quieto.", ["Omitir", skipAuto]);
+  banner("Apunta a los cerros o a una torre alta con cielo detrás. No muevas el teléfono.", ["Omitir", skipAuto]);
 }
 function skipAuto() { endCal(); toast("Sin calibrar: los nombres pueden salir corridos."); }
 
@@ -815,7 +816,7 @@ function autoStep() {
   if (m.ok) return applyAuto(m);
   if (++autoFails === 6) {
     const why = m.reason === "plano" ? "Apunta hacia donde se vean cerros con picos."
-      : "No encuentro el borde de montañas ni torres. Apunta a otro lado o calibra tocando un lugar.";
+      : "No veo dónde empieza el cielo. Apunta a otro lado o toca un lugar.";
     banner(why, ["Tocar un lugar", startCal], ["Omitir", skipAuto]);
   }
 }
@@ -859,8 +860,8 @@ function applyAuto(m) {
   cfg.pitch = pitch; store.set("pitch", pitch);
   calibrated = true; autoMode = false;
   autoDots = m.pts.map((p) => ({ az: p.az + m.dh, el: p.el + m.dp }));
-  banner("¿La línea blanca sigue el borde de las montañas y las torres quedan dentro de sus marcos? Los puntos azules, justo debajo, son lo que vio la cámara.",
-    ["Sí", () => { endCal(); toast("Calibrado. Si algo se corre, toca Calibrar."); }], ["Corregir", startCal]);
+  banner("¿La línea blanca va sobre los cerros?",
+    ["Sí", () => { endCal(); toast("Calibrado. Si algo se corre, toca Calibrar."); }], ["No", startCal]);
 }
 
 function calTap(x, y) {
@@ -911,7 +912,7 @@ function calPick(l) {
   const s = solveCalibration(pts, { corr, pitch: cfg.pitch, f: focal() }, fitF);
   const fov = fitF ? fovFromF(s.f) : cfg.fov;
   if (!Number.isFinite(s.corr) || Math.abs(s.pitch) > 10 || fov < 30 || fov > 110) {
-    toast("Ese toque no cuadra con los anteriores. Intenta otra vez.");
+    toast("Ese toque no coincide. Intenta otra vez.");
     calPoints = []; pending = null;
     return;
   }
@@ -925,9 +926,9 @@ function calPick(l) {
   calibrated = true;
   calPoints = pts; pending = null;
   if (guided === 0) { guided = 1; guideStep(); return; }
-  if (guided === 1) { endCal(); toast(fitF ? "Calibración completa." : "Calibrado. Para afinar el zoom, toca otro lugar cerca de una orilla."); return; }
+  if (guided === 1) { endCal(); toast(fitF ? "Calibración completa." : "Listo. Para más precisión, toca otro lugar cerca de la orilla de la pantalla."); return; }
   if (fitF) { endCal(); toast("Calibración completa. Si se mueve con el tiempo, vuelve a calibrar."); }
-  else banner(`Listo con ${l.nombre}. Para afinar el zoom, toca otro lugar lejos de este, hacia un lado.`, ["Terminar", endCal]);
+  else banner(`Listo con ${l.nombre}. Para más precisión, toca otro lugar cerca de la orilla de la pantalla.`, ["Terminar", endCal]);
 }
 
 // Arrastrar la vista: los nombres siguen al dedo. Lado a lado corrige el rumbo, arriba/abajo la inclinación.
@@ -1040,7 +1041,7 @@ function drawMap() {
   draw();
 }
 $("spotAdd").onclick = () => {
-  if (!pos) { toast("Espera a tener GPS."); return; }
+  if (!pos) { toast("Espera unos segundos, todavía está cargando."); return; }
   pin = { lat: pos.lat, lon: pos.lon }; mapC = toTile(pin.lat, pin.lon);
   $("spotNew").hidden = false; $("spotAdd").hidden = true;
   $("spotFloor").value = cfg.floor; $("spotName").value = "";
