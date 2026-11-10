@@ -1,6 +1,6 @@
 // Run: node check.mjs   (fails loudly if the geometry breaks)
 import assert from "node:assert/strict";
-import { distBearing, elevAngle, dirVector, cameraBasis, headingPitch, project, destination, rayMax, tiltBasis, solveCalibration, skyEdges, matchSkyline } from "./geo.js";
+import { distBearing, elevAngle, dirVector, cameraBasis, headingPitch, project, destination, rayMax, tiltBasis, solveCalibration, skyEdges, matchSkyline, withTowers } from "./geo.js";
 import { LANDMARKS, PERFILES } from "./landmarks.js";
 
 const near = (a, b, tol, msg) => assert.ok(Math.abs(a - b) <= tol, `${msg}: ${a} vs ${b}`);
@@ -80,6 +80,21 @@ assert.ok(rayMax(cone, 20, -103, 0, 0, 500, 38000).angle < elevAngle(0, 3000, 40
   near(m.dh, 7, 0.15, "skyline dh"); near(m.dp, 1.2, 0.05, "skyline dp");
   assert.ok(!matchSkyline(pts.map((p) => ({ az: p.az, el: 0.5 })), () => 0.5).ok, "flat horizon must not match");
   assert.ok(!matchSkyline(pts.map((p) => ({ az: p.az, el: 0.5 + 0.02 * Math.sin(p.az) })), S).ok, "flat camera line must not match peaks");
+  // Towers on a flat horizon: the match must lock on them (dh 6, dp 0.8), and fail without them.
+  const flat = () => 0.3, h0 = 1650;
+  const towers = [
+    { bearing: 250, dist: 3000, w: 40, h: 204, base: 1604, poly: PERFILES.torreCorona.poly },
+    { bearing: 262, dist: 2500, w: 60, h: 170, base: 1560, poly: PERFILES.torre.poly },
+  ];
+  const T = withTowers(flat, towers, h0);
+  near(T(250), elevAngle(h0, 1808, 3000), 1e-9, "tower top on skyline");
+  near(T(240), 0.3, 1e-9, "terrain beside tower");
+  const tp = [];
+  for (let i = 0; i < 120; i++) { const az = 235 + i * 0.33; tp.push({ az, el: T(az + 6) - 0.8 + 0.03 * Math.sin(i) }); }
+  const mt = matchSkyline(tp, T);
+  assert.ok(mt.ok, `tower match not ok: ${mt.reason}`);
+  near(mt.dh, 6, 0.15, "tower dh"); near(mt.dp, 0.8, 0.05, "tower dp");
+  assert.ok(!matchSkyline(tp, flat).ok, "towers missing from the model must not match");
   // Frame 40×60: blue sky above row 20 + x/4, grey city below. Band covers the whole column.
   const w = 40, h = 60, img = new Uint8ClampedArray(w * h * 4);
   for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {

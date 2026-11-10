@@ -170,7 +170,7 @@
     <label class="floor">¿En qué piso estás? <input id="calFloor" type="number" min="0" max="100" step="1" inputmode="numeric"></label>
     <p id="calGps" class="warnTxt" hidden></p>
     <button id="calGuided" class="btn opt">Con edificios <small>Recomendado</small><small class="d">Toca la punta del Hotel Riu y luego la del Fiesta Americana. Lo más preciso.</small></button>
-    <button id="calSky" class="btn opt">Con el horizonte<small class="d">Apunta a los cerros; la cámara busca su borde sola. Necesita buena vista.</small></button>
+    <button id="calSky" class="btn opt">Con el horizonte<small class="d">Apunta a cerros o torres altas contra el cielo; la cámara busca su borde sola. Necesita buena vista.</small></button>
     <button id="calAny" class="btn opt">Tocar cualquier lugar<small class="d">Toca algo que reconozcas y elige su nombre en la lista.</small></button>
     <button id="calNone" class="btn opt">Solo GPS y brújula<small class="d">Borra la calibración y el zoom guardados y usa la brújula tal cual. Úsalo si quedó mal calibrado.</small></button>
     <button id="calClose" class="btn plain">Cerrar</button>
@@ -249,7 +249,7 @@
 <div id="landscape">Gira el teléfono a vertical.</div>
 
 <script type="module">
-import { distBearing, elevAngle, dirVector, cameraBasis, headingPitch, project, smoothBasis, rayMax, tiltBasis, solveCalibration, skyEdges, matchSkyline } from "./geo.js";
+import { distBearing, elevAngle, dirVector, cameraBasis, headingPitch, project, smoothBasis, rayMax, tiltBasis, solveCalibration, skyEdges, matchSkyline, withTowers } from "./geo.js";
 import { loadArea, elevation } from "./terrain.js";
 import { LANDMARKS, PERFILES } from "./landmarks.js";
 
@@ -789,7 +789,7 @@ function guideStep() {
 }
 
 // --- Calibración automática ---
-// Busca en la cámara la línea entre cielo y tierra y la desliza sobre el horizonte del relieve.
+// Busca en la cámara la línea entre cielo y tierra y la desliza sobre el horizonte del relieve y las torres.
 // Lo que mejor coincide da el error de la brújula y de la inclinación. Luego pide confirmar.
 let autoMode = false, autoPending = false, autoLast = 0, autoFails = 0, autoDots = null;
 let stillRef = null, stillSince = 0;
@@ -801,7 +801,7 @@ function startAuto() {
   endCal();
   autoMode = true; autoFails = 0; autoLast = performance.now();
   $("focusCard").hidden = true; $("guide").hidden = true;
-  banner("Calibrando: apunta hacia las montañas y sostén el teléfono quieto.", ["Omitir", skipAuto]);
+  banner("Calibrando: apunta hacia montañas o torres altas contra el cielo y sostén el teléfono quieto.", ["Omitir", skipAuto]);
 }
 function skipAuto() { endCal(); toast("Sin calibrar: los nombres pueden salir corridos."); }
 
@@ -815,7 +815,7 @@ function autoStep() {
   if (m.ok) return applyAuto(m);
   if (++autoFails === 6) {
     const why = m.reason === "plano" ? "Apunta hacia donde se vean cerros con picos."
-      : "No encuentro el borde de las montañas. Apunta a otro lado o calibra tocando un lugar.";
+      : "No encuentro el borde de montañas ni torres. Apunta a otro lado o calibra tocando un lugar.";
     banner(why, ["Tocar un lugar", startCal], ["Omitir", skipAuto]);
   }
 }
@@ -830,10 +830,13 @@ function tryAuto() {
     const u = x - cx, v = cy - y, r = b.fwd.map((q, i) => q + (b.right[i] * u) / f + (b.up[i] * v) / f);
     return { az: (Math.atan2(r[0], r[1]) * DEG + corr + 360) % 360, el: Math.asin(r[2] / Math.hypot(...r)) * DEG };
   };
+  // Horizonte esperado: relieve más el techo de los edificios conocidos que no estén tapados.
+  const S = withTowers(skylineAt, items.filter((l) => l.tipo === "e" && !l.hidden)
+    .map((l) => ({ ...l, base: l.alt - l.h, poly: (PERFILES[l.perfil] || PERFILES.bloque).poly })), viewerAlt());
   // Solo se busca en las filas donde podría estar el horizonte: rumbo ±55° (vista + error de brújula), altura ±3°.
   const c = dirAt(cx, cy).az;
   let lo = Infinity, hi = -Infinity;
-  for (let a = -55; a <= 55; a += 0.5) { const e = skylineAt(c + a); lo = Math.min(lo, e); hi = Math.max(hi, e); }
+  for (let a = -55; a <= 55; a += 0.1) { const e = S(c + a); lo = Math.min(lo, e); hi = Math.max(hi, e); }
   const band = (x) => {
     let y0 = h, y1 = -1;
     for (let y = 0; y < h; y++) { const e = dirAt((x + 0.5) * kx, y * ky).el; if (e <= hi + 3 && y < y0) y0 = y; if (e >= lo - 3) y1 = y; }
@@ -842,7 +845,7 @@ function tryAuto() {
   const rows = skyEdges(gctx.getImageData(0, 0, w, h).data, w, h, band);
   const pts = rows.flatMap((y, x) => (y < 0 ? [] : [dirAt((x + 0.5) * kx, y * ky)]));
   if (pts.length < w * 0.4) return { ok: false, reason: "sin borde" };
-  return { ...matchSkyline(pts, skylineAt), pts };
+  return { ...matchSkyline(pts, S), pts };
 }
 
 function applyAuto(m) {
@@ -856,7 +859,7 @@ function applyAuto(m) {
   cfg.pitch = pitch; store.set("pitch", pitch);
   calibrated = true; autoMode = false;
   autoDots = m.pts.map((p) => ({ az: p.az + m.dh, el: p.el + m.dp }));
-  banner("¿La línea blanca sigue el borde de las montañas? Los puntos azules, justo debajo, son lo que vio la cámara.",
+  banner("¿La línea blanca sigue el borde de las montañas y las torres quedan dentro de sus marcos? Los puntos azules, justo debajo, son lo que vio la cámara.",
     ["Sí", () => { endCal(); toast("Calibrado. Si algo se corre, toca Calibrar."); }], ["Corregir", startCal]);
 }
 

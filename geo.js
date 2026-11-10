@@ -169,6 +169,29 @@ export function skyEdges(rgba, w, h, band, minStep = 12) {
   return out;
 }
 
+// Skyline S(az) raised by the roofline of known towers, so towers against the sky count as
+// features to match. towers: [{ bearing, dist, w, h, base (m above sea), poly (PERFILES shape) }].
+export function withTowers(S, towers, h0) {
+  // Top of a profile at x (-0.5..0.5): highest polygon edge crossing x, or -1.
+  const top = (poly, x) => {
+    let y = -1;
+    poly.forEach(([x1, y1], i) => {
+      const [x2, y2] = poly[(i + 1) % poly.length];
+      if ((x1 - x) * (x2 - x) <= 0 && x1 !== x2) y = Math.max(y, y1 + ((y2 - y1) * (x - x1)) / (x2 - x1));
+    });
+    return y;
+  };
+  return (az) => {
+    let e = S(az);
+    for (const t of towers) {
+      const x = (Math.tan(rad(((az - t.bearing + 540) % 360) - 180)) * t.dist) / t.w;
+      const y = Math.abs(x) <= 0.5 ? top(t.poly, x) : -1;
+      if (y >= 0) e = Math.max(e, elevAngle(h0, t.base + y * t.h, t.dist));
+    }
+    return e;
+  };
+}
+
 // Slide the measured sky line along the terrain skyline S(az) to find the heading error dh
 // and tilt error dp (deg). pts: [{ az, el }] from the current calibration.
 // Truncated cost, so towers sticking above the horizon don't pull the fit.
