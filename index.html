@@ -6,8 +6,8 @@
 <meta name="theme-color" content="#000000">
 <title>Visor GDL</title>
 <link rel="manifest" href="manifest.webmanifest">
-<link rel="icon" href="icon-192.png">
-<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" href="favicon-32.png" sizes="32x32">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
 <style>
   :root {
     --fg: #fff; --muted: #b9b9b9; --glass: rgba(18,18,18,.78); --line: rgba(255,255,255,.14);
@@ -104,8 +104,9 @@
   .sheet input[type=number], .sheet input[type=text] { font: inherit; width: 100%; padding: 12px; margin-top: 6px; border-radius: 10px; border: 1px solid #444; background: #000; color: #fff; }
   .sheet input[type=range] { width: 100%; margin-top: 10px; accent-color: var(--accent); }
 
-  #start { position: fixed; inset: 0; display: flex; flex-direction: column; justify-content: center; padding: 28px; gap: 18px; background: radial-gradient(120% 80% at 50% 0%, #2b2a20, #111 60%); }
+  #start { position: fixed; inset: 0; display: flex; flex-direction: column; justify-content: center; padding: 28px; gap: 18px; background: radial-gradient(120% 80% at 50% 0%, #2a3a5e, #0d1424 60%); }
   #start h1 { margin: 0; font-size: 34px; }
+  #start h1 img { display: block; width: 140px; height: 140px; border-radius: 24px; }
   #start ol { margin: 0; padding-left: 22px; color: #ddd; }
   #start li { margin-bottom: 8px; }
   #start small { color: var(--muted); }
@@ -236,13 +237,13 @@
 </section>
 
 <div id="start">
-  <h1>Visor GDL</h1>
+  <h1><img src="icon-512.png" alt="Visor GDL" width="140" height="140"></h1>
   <ol>
     <li>Permite cámara y ubicación.</li>
-    <li>Toca <b>Calibrar</b> y luego toca en la pantalla un lugar que reconozcas. Repite con otro lugar a un lado para afinar.</li>
+    <li>Elige cómo calibrar y sigue los pasos en pantalla.</li>
     <li>Pon el círculo sobre algo, o toca un nombre, para ver fotos y detalles.</li>
   </ol>
-  <small>Quita fundas con imán. Funciona mejor en Chrome para Android, en vertical.</small>
+  <small>Quita fundas con imán y usa el teléfono en vertical. Funciona en Android (Chrome) y iPhone (Safari).</small>
   <button id="btnStart">Iniciar</button>
 </div>
 
