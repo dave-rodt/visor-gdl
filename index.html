@@ -53,6 +53,7 @@
   #guide { position: fixed; top: calc(max(10px, env(safe-area-inset-top)) + 46px); left: 12px; right: 12px; display: flex; gap: 10px; align-items: center;
            padding: 8px 8px 8px 14px; border-radius: 14px; font-size: 15px; }
   #guide span { flex: 1; }
+  #banner:not([hidden]) ~ #guide { top: calc(max(10px, env(safe-area-inset-top)) + 150px); }
   #guide button { width: 40px; height: 40px; border-radius: 50%; background: rgba(255,255,255,.15); }
   .group { margin: 16px 0 8px; font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
 
@@ -71,6 +72,9 @@
   .btn.main { background: var(--accent); color: #000; text-align: center; font-weight: 600; }
   .btn.plain { text-align: center; }
   .btn.opt { padding: 12px 16px; font-weight: 600; }
+  .sheet label.floor { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+  .sheet label.floor input { width: 90px; margin: 0; }
+  .warnTxt { color: var(--warn) !important; }
   .btn small.d { display: block; margin: 4px 0 0; font-weight: 400; line-height: 1.35; }
 
   #carousel { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; background: #000; }
@@ -152,10 +156,12 @@
   <div class="body">
     <h2 id="calTitle">¿Cómo calibrar?</h2>
     <p>Calibrar hace que los nombres caigan justo sobre cada lugar.</p>
-    <button id="calGuided" class="btn opt">Con edificios <small>Recomendado</small><small class="d">Toca la punta del Hotel Riu y luego la de Punto São Paulo. Lo más preciso.</small></button>
+    <label class="floor">¿En qué piso estás? <input id="calFloor" type="number" min="0" max="100" step="1" inputmode="numeric"></label>
+    <p id="calGps" class="warnTxt" hidden></p>
+    <button id="calGuided" class="btn opt">Con edificios <small>Recomendado</small><small class="d">Toca la punta del Hotel Riu y luego la del Fiesta Americana. Lo más preciso.</small></button>
     <button id="calSky" class="btn opt">Con el horizonte<small class="d">Apunta a los cerros; la cámara busca su borde sola. Necesita buena vista.</small></button>
     <button id="calAny" class="btn opt">Tocar cualquier lugar<small class="d">Toca algo que reconozcas y elige su nombre en la lista.</small></button>
-    <button id="calNone" class="btn opt">Solo GPS y brújula<small class="d">Sin calibrar. Rápido, pero los nombres pueden salir corridos unos grados.</small></button>
+    <button id="calNone" class="btn opt">Solo GPS y brújula<small class="d">Borra la calibración y el zoom guardados y usa la brújula tal cual. Úsalo si quedó mal calibrado.</small></button>
     <button id="calClose" class="btn plain">Cerrar</button>
   </div>
 </section>
@@ -695,7 +701,16 @@ function banner(text, [l1, f1] = ["Cancelar", endCal], second) {
   $("banner").hidden = false;
 }
 // Menú de calibración: al abrir la app y con el botón Calibrar.
-function openCalMenu() { endCal(); openSheet("calPanel"); }
+function openCalMenu() {
+  endCal();
+  $("calFloor").value = cfg.floor;
+  // Dentro de un depa el GPS suele fallar por decenas de metros: los edificios cercanos salen corridos.
+  const bad = pos && pos.acc > 25;
+  $("calGps").hidden = !bad;
+  if (bad) $("calGps").textContent = `GPS impreciso (±${Math.round(pos.acc)} m). Cerca de una ventana o afuera mejora. Con el horizonte depende menos del GPS.`;
+  openSheet("calPanel");
+}
+$("calFloor").onchange = (e) => setFloor(e.target.value);
 $("btnCal").onclick = openCalMenu;
 $("calBadge").onclick = openCalMenu;
 $("calClose").onclick = closeSheets;
@@ -703,16 +718,16 @@ $("calGuided").onclick = () => { closeSheets(); startGuided(); };
 $("calSky").onclick = () => { closeSheets(); startAuto(); };
 $("calAny").onclick = () => { closeSheets(); startCal(); };
 // Solo brújula: se olvida la calibración del giroscopio; el rumbo vuelve a seguir a la brújula.
-$("calNone").onclick = () => { closeSheets(); gyroCorr = autoCorr = null; calibrated = false; toast("Usando solo GPS y brújula."); };
+$("calNone").onclick = () => { closeSheets(); resetCal(); toast("Calibración borrada. Usando solo GPS y brújula."); };
 
-// --- Calibración guiada: tocar la punta real del Hotel Riu y luego la de Punto São Paulo ---
+// --- Calibración guiada: tocar la punta real del Hotel Riu y luego la del Fiesta Americana ---
 // El primero fija rumbo e inclinación; el segundo los afina y, si lo tocas lejos del centro, también el zoom.
-const GUIA = ["Hotel Riu", "Punto São Paulo"];
+const GUIA = ["Hotel Riu", "Fiesta Americana"];
 let guided = null; // índice en GUIA del lugar que toca ahora
 
 function startGuided() {
-  const l = items.find((i) => i.nombre === GUIA[0]);
-  if (!l || l.hidden || l.dist > 15000) return startAuto(); // lejos de la azotea: usa el horizonte
+  const ok = GUIA.every((n) => { const l = items.find((i) => i.nombre === n); return l && !l.hidden && l.dist < 15000; });
+  if (!ok) return startAuto(); // lejos de la azotea (o no se ven): usa el horizonte
   if (!basis) { toast("Espera a tener la brújula."); return; }
   endCal();
   calMode = true; calPoints = []; guided = 0;
@@ -877,18 +892,25 @@ function toast(msg) {
 const syncFov = () => { $("inFov").value = cfg.fov; $("fovOut").textContent = Math.round(cfg.fov); };
 $("inFloor").value = cfg.floor; syncFov();
 if (cfg.ground != null) $("inGround").value = cfg.ground;
-$("inFloor").onchange = (e) => { const v = Number(e.target.value); if (v >= 0 && v <= 100) { cfg.floor = v; store.set("floor", v); recompute(); } };
+function setFloor(val) {
+  const v = Number(val);
+  if (val === "" || !(v >= 0 && v <= 100)) return;
+  cfg.floor = v; store.set("floor", v); $("inFloor").value = $("calFloor").value = v; recompute();
+}
+$("inFloor").onchange = (e) => setFloor(e.target.value);
 $("inGround").onchange = (e) => {
   if (e.target.value === "") { store.set("groundManual", null); if (pos) loadRelief(pos.lat, pos.lon); return; }
   const v = Number(e.target.value);
   if (v >= 0 && v <= 5000) { cfg.ground = v; store.set("groundManual", v); recompute(); }
 };
 $("inFov").oninput = (e) => { cfg.fov = Number(e.target.value); $("fovOut").textContent = cfg.fov; store.set("fov", cfg.fov); };
-$("calReset").onclick = () => {
-  cfg.corr = DECLINATION; cfg.pitch = 0; store.set("corr", cfg.corr); store.set("pitch", 0);
+// Vuelve a la brújula tal cual: sin corrección de rumbo, inclinación ni zoom.
+function resetCal() {
+  cfg.corr = DECLINATION; cfg.pitch = 0; cfg.fov = 65;
+  store.set("corr", cfg.corr); store.set("pitch", 0); store.set("fov", 65); syncFov();
   gyroCorr = autoCorr = null; calibrated = false; calPoints = [];
-  toast("Calibración borrada");
-};
+}
+$("calReset").onclick = () => { resetCal(); toast("Calibración borrada"); };
 $("btnSet").onclick = () => openSheet("setPanel");
 $("setClose").onclick = closeSheets;
 

@@ -28,6 +28,7 @@ export const LANDMARKS = [
   { nombre: "La Minerva", lat: 20.674405, lon: -103.38733, alt: 1590 + 21, h: 21, w: 10, perfil: "estatua", tipo: "e", wiki: "Glorieta La Minerva" },
   { nombre: "Los Arcos", lat: 20.674436, lon: -103.38482, alt: 1588 + 20, h: 20, w: 25, perfil: "arco", tipo: "e", wiki: "Arcos de Guadalajara" }, // aprox
   { nombre: "Hospicio Cabañas", lat: 20.67687, lon: -103.3377, alt: 1540 + 35, h: 35, w: 165, perfil: "cupula", tipo: "e", wiki: "Hospicio Cabañas" }, // aprox
+  { nombre: "Fiesta Americana", lat: 20.673643, lon: -103.388991, alt: 1590 + 80, h: 80, w: 45, perfil: "torre", tipo: "e" }, // aprox: 22 pisos (Posadas), junto a La Minerva
   { nombre: "Punto São Paulo", lat: 20.70302, lon: -103.37571, alt: 1549 + 170, h: 170, w: 40, perfil: "torre", tipo: "e" }, // aprox
   { nombre: "Andares", lat: 20.71139, lon: -103.41297, alt: 1582 + 40, h: 40, w: 150, perfil: "bloque", tipo: "e" }, // aprox
   { nombre: "Biblioteca Juan José Arreola", lat: 20.73809, lon: -103.38105, alt: 1559 + 35, h: 35, w: 130, perfil: "bloque", tipo: "e", wiki: 'Biblioteca Pública del Estado de Jalisco "Juan José Arreola"' }, // aprox

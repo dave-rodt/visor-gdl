@@ -1,6 +1,6 @@
 // Offline support. App files: network first (updates show up), cache as fallback.
 // Terrain tiles and photos never change: cache first, so the roof works with weak signal.
-const APP = "visor-app-v1";
+const APP = "visor-app-v2";
 const DATA = "visor-data-v1";
 const APP_FILES = ["./", "index.html", "geo.js", "terrain.js", "landmarks.js", "info/info.json", "manifest.webmanifest", "icon-192.png"];
 
@@ -26,7 +26,8 @@ self.addEventListener("fetch", (e) => {
       return r;
     }));
   } else if (url.origin === location.origin) {
-    e.respondWith(fetch(e.request).then((r) => {
+    // no-cache: always ask the server, so an installed app never keeps an old landmarks.js.
+    e.respondWith(fetch(e.request, { cache: "no-cache" }).then((r) => {
       if (r.ok) { const copy = r.clone(); caches.open(APP).then((c) => c.put(e.request, copy)); }
       return r;
     }).catch(() => caches.match(e.request, { ignoreSearch: true })));
