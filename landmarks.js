@@ -40,6 +40,9 @@ export const LANDMARKS = [
   // Zonas y ciudades
   { nombre: "Tlaquepaque", lat: 20.639678, lon: -103.31183, alt: 1583, tipo: "z", wiki: "San Pedro Tlaquepaque" },
   { nombre: "Puerto Vallarta", lat: 20.610364, lon: -105.2351, alt: 0, tipo: "z", wiki: "Puerto Vallarta" },
+  { nombre: "Mazatlán", lat: 23.2494, lon: -106.4111, alt: 0, tipo: "z", wiki: "Mazatlán" },
+  { nombre: "Cancún", lat: 21.1619, lon: -86.8515, alt: 0, tipo: "z", wiki: "Cancún" },
+  { nombre: "Ciudad de México", lat: 19.4326, lon: -99.1332, alt: 2240, tipo: "z", wiki: "Ciudad de México" },
 ];
 
 // Siluetas vistas de frente. x de -0.5 a 0.5 (fracción del ancho), y de 0 (suelo) a 1 (punta).

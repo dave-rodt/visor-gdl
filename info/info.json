@@ -502,5 +502,77 @@
     "fuente": "https://commons.wikimedia.org/wiki/File:Jalisco_Stadium_panoramic_retouched.jpg"
    }
   ]
+ },
+ "Mazatlán": {
+  "texto": "Mazatlán es una ciudad ubicada en el estado mexicano de Sinaloa, cabecera del municipio del mismo nombre. Es apodada «La perla del Pacífico». De acuerdo con el censo de población y vivienda 2020, Mazatlán tenía una población de 441 975 habitantes, por lo que se mantiene como la segunda ciudad más poblada de Sinaloa, después de Culiacán.",
+  "url": "https://es.wikipedia.org/wiki/Mazatl%C3%A1n",
+  "fotos": [
+   {
+    "src": "info/img/mazatlan-1.jpg",
+    "autor": "Dennis Sylvester Hurd",
+    "licencia": "CC0",
+    "fuente": "https://commons.wikimedia.org/wiki/File:Mazatl%C3%A1nPanor%C3%A1mica.jpg"
+   },
+   {
+    "src": "info/img/mazatlan-2.jpg",
+    "autor": "panza.rayada",
+    "licencia": "CC BY-SA 3.0",
+    "fuente": "https://commons.wikimedia.org/wiki/File:Catedral_de_Mazatl%C3%A1n_-_panoramio.jpg"
+   },
+   {
+    "src": "info/img/mazatlan-3.jpg",
+    "autor": "Gzzz",
+    "licencia": "CC BY-SA 4.0",
+    "fuente": "https://commons.wikimedia.org/wiki/File:Angel_Flores_Mazatl%C3%A1n.jpg"
+   }
+  ]
+ },
+ "Cancún": {
+  "texto": "Cancún es una ciudad turística mexicana ubicada en la península de Yucatán en el estado de Quintana Roo, cabecera del municipio de Benito Juárez. Es la ciudad más poblada del estado, con 888 797 habitantes según el censo del Instituto Nacional de Estadística y Geografía en 2020. Considerada un destino turístico de talla mundial, con certificación de la Organización Mundial del Turismo, el proyecto de su desarrollo inició operaciones en 1974 como Centro Integralmente Planeado, pionero de Fonatur, antes conocido como Infratur.",
+  "url": "https://es.wikipedia.org/wiki/Canc%C3%BAn",
+  "fotos": [
+   {
+    "src": "info/img/cancun-1.jpg",
+    "autor": "dronepicr",
+    "licencia": "CC BY 2.0",
+    "fuente": "https://commons.wikimedia.org/wiki/File:Cancun_Strand_Luftbild_(22143397586).jpg"
+   },
+   {
+    "src": "info/img/cancun-2.jpg",
+    "autor": "MARELBU",
+    "licencia": "CC BY 3.0",
+    "fuente": "https://commons.wikimedia.org/wiki/File:Boulevard_Kukulcan,_Zona_Hotelera,_Canc%C3%BAn,_Mexico_-_panoramio_(34).jpg"
+   },
+   {
+    "src": "info/img/cancun-3.jpg",
+    "autor": "David Stanley from Nanaimo, Canada",
+    "licencia": "CC BY 2.0",
+    "fuente": "https://commons.wikimedia.org/wiki/File:San_Miguelito_Ruins_(12973805005).jpg"
+   }
+  ]
+ },
+ "Ciudad de México": {
+  "texto": "La Ciudad de México, antes denominada también México, Distrito Federal, es la capital de los Estados Unidos Mexicanos, sede de los Poderes de la Unión y una de las entidades federativas que, junto con los treinta y un estados, conforman el país. Está dividida en dieciséis demarcaciones territoriales. Se localiza en el valle de México en la región centro sur del país; colinda al norte, oeste y este con el Estado de México y al sur con Morelos. Tiene una extensión territorial de 1495 km², lo que representa el 0.1 % del territorio nacional, siendo la entidad más pequeña del país.",
+  "url": "https://es.wikipedia.org/wiki/Ciudad_de_M%C3%A9xico",
+  "fotos": [
+   {
+    "src": "info/img/ciudad-de-mexico-1.jpg",
+    "autor": "Lidia Lopez",
+    "licencia": "CC BY 2.0",
+    "fuente": "https://commons.wikimedia.org/wiki/File:Mexico_City_Angel_of_Independence.jpg"
+   },
+   {
+    "src": "info/img/ciudad-de-mexico-2.jpg",
+    "autor": "ProtoplasmaKid",
+    "licencia": "CC BY-SA 4.0",
+    "fuente": "https://commons.wikimedia.org/wiki/File:Catedral_Metropolitana_de_la_Ciudad_de_M%C3%A9xico_1.jpg"
+   },
+   {
+    "src": "info/img/ciudad-de-mexico-3.jpg",
+    "autor": "Timothy Neesam",
+    "licencia": "CC BY-SA 4.0",
+    "fuente": "https://commons.wikimedia.org/wiki/File:Palacio_de_Bellas_Artes,_Mexico_City,_MX.jpg"
+   }
+  ]
  }
 }
