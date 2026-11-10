@@ -38,7 +38,7 @@
 
   #tapMark { position: fixed; width: 28px; height: 28px; margin: -14px 0 0 -14px; border: 3px solid var(--accent); border-radius: 50%; pointer-events: none; box-shadow: 0 0 0 2px rgba(0,0,0,.6); }
 
-  #focusCard { position: fixed; left: 12px; right: 12px; bottom: calc(max(12px, env(safe-area-inset-bottom)) + 66px); display: flex; gap: 12px; align-items: center;
+  #focusCard { position: fixed; left: 12px; right: 76px; bottom: calc(max(12px, env(safe-area-inset-bottom)) + 66px); display: flex; gap: 12px; align-items: center;
                padding: 8px 14px 8px 8px; border-radius: 16px; text-align: left; min-height: 64px; }
   #focusCard img { width: 56px; height: 56px; border-radius: 10px; object-fit: cover; background: #333; flex: none; }
   #focusCard img:not([src]) { display: none; }
@@ -50,6 +50,14 @@
   #bar { position: fixed; bottom: max(12px, env(safe-area-inset-bottom)); left: 12px; right: 12px; display: flex; gap: 10px; }
   #bar button { flex: 1; min-height: 52px; border-radius: 14px; font-weight: 600; color: #fff; font-size: 15px; }
   #bar #btnCal { flex: 1.3; background: var(--accent); color: #000; }
+  #btnFreeze { position: fixed; right: 12px; bottom: calc(max(12px, env(safe-area-inset-bottom)) + 66px); width: 52px; height: 52px; border-radius: 50%; font-size: 20px; }
+  #btnFreeze.on { background: var(--accent); color: #000; }
+  #overlay { touch-action: none; }
+  #spotMap { position: static; display: block; width: 100%; height: 300px; border-radius: 12px; background: #222; touch-action: manipulation; }
+  .mapNote { font-size: 12px; color: var(--muted) !important; margin: 4px 0 12px !important; }
+  .row { display: flex; gap: 8px; align-items: center; }
+  .row .btn { flex: 1; }
+  .row .del { flex: 0 0 50px; text-align: center; }
   #guide { position: fixed; top: calc(max(10px, env(safe-area-inset-top)) + 46px); left: 12px; right: 12px; display: flex; gap: 10px; align-items: center;
            padding: 8px 8px 8px 14px; border-radius: 14px; font-size: 15px; }
   #guide span { flex: 1; }
@@ -71,6 +79,7 @@
   .btn small { color: var(--muted); margin-left: 6px; }
   .btn.main { background: var(--accent); color: #000; text-align: center; font-weight: 600; }
   .btn.plain { text-align: center; }
+  .btn.main small { color: #333; }
   .btn.opt { padding: 12px 16px; font-weight: 600; }
   .sheet label.floor { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
   .sheet label.floor input { width: 90px; margin: 0; }
@@ -92,7 +101,7 @@
   #credits li { margin-bottom: 4px; }
 
   .sheet label { display: block; margin-bottom: 16px; color: #ddd; }
-  .sheet input[type=number] { font: inherit; width: 100%; padding: 12px; margin-top: 6px; border-radius: 10px; border: 1px solid #444; background: #000; color: #fff; }
+  .sheet input[type=number], .sheet input[type=text] { font: inherit; width: 100%; padding: 12px; margin-top: 6px; border-radius: 10px; border: 1px solid #444; background: #000; color: #fff; }
   .sheet input[type=range] { width: 100%; margin-top: 10px; accent-color: var(--accent); }
 
   #start { position: fixed; inset: 0; display: flex; flex-direction: column; justify-content: center; padding: 28px; gap: 18px; background: radial-gradient(120% 80% at 50% 0%, #2b2a20, #111 60%); }
@@ -129,6 +138,7 @@
   <span class="chev" aria-hidden="true">›</span>
 </button>
 
+<button id="btnFreeze" class="glass" aria-label="Congelar imagen">⏸</button>
 <nav id="bar">
   <button id="btnCal">Calibrar</button>
   <button id="btnFind" class="glass">Buscar</button>
@@ -155,7 +165,8 @@
   <div class="grip"></div>
   <div class="body">
     <h2 id="calTitle">¿Cómo calibrar?</h2>
-    <p>Calibrar hace que los nombres caigan justo sobre cada lugar.</p>
+    <p>Calibrar hace que los nombres caigan justo sobre cada lugar. Después puedes arrastrar la vista con el dedo para afinar.</p>
+    <button id="calWhere" class="btn"></button>
     <label class="floor">¿En qué piso estás? <input id="calFloor" type="number" min="0" max="100" step="1" inputmode="numeric"></label>
     <p id="calGps" class="warnTxt" hidden></p>
     <button id="calGuided" class="btn opt">Con edificios <small>Recomendado</small><small class="d">Toca la punta del Hotel Riu y luego la del Fiesta Americana. Lo más preciso.</small></button>
@@ -163,6 +174,25 @@
     <button id="calAny" class="btn opt">Tocar cualquier lugar<small class="d">Toca algo que reconozcas y elige su nombre en la lista.</small></button>
     <button id="calNone" class="btn opt">Solo GPS y brújula<small class="d">Borra la calibración y el zoom guardados y usa la brújula tal cual. Úsalo si quedó mal calibrado.</small></button>
     <button id="calClose" class="btn plain">Cerrar</button>
+  </div>
+</section>
+
+<section id="spotPanel" class="sheet" role="dialog" aria-modal="true" aria-labelledby="spotTitle" hidden>
+  <div class="grip"></div>
+  <div class="body">
+    <h2 id="spotTitle">¿Dónde estás?</h2>
+    <p>Dentro de un edificio el GPS falla. Guarda tu lugar una vez y úsalo siempre.</p>
+    <ul id="spotList"></ul>
+    <div id="spotNew" hidden>
+      <p>Toca el mapa justo donde estás.</p>
+      <canvas id="spotMap"></canvas>
+      <p class="mapNote">Mapa © colaboradores de OpenStreetMap</p>
+      <label>Nombre <input id="spotName" type="text" maxlength="30" placeholder="Ej. Azotea, Depa"></label>
+      <label>Piso <input id="spotFloor" type="number" min="0" max="100" step="1" inputmode="numeric"></label>
+      <button id="spotSave" class="btn main">Guardar y usar</button>
+    </div>
+    <button id="spotAdd" class="btn">+ Guardar un lugar nuevo</button>
+    <button id="spotClose" class="btn plain">Cerrar</button>
   </div>
 </section>
 
@@ -199,6 +229,7 @@
     <label>Campo de visión: <b id="fovOut"></b>°. Se ajusta solo al calibrar con dos lugares.
       <input id="inFov" type="range" min="30" max="110" step="1">
     </label>
+    <button id="setWhere" class="btn">Mis lugares guardados</button>
     <button id="calReset" class="btn plain">Borrar calibración</button>
     <button id="setClose" class="btn main">Listo</button>
   </div>
@@ -275,7 +306,11 @@ function onRelative(e) {
   lastSensor = performance.now();
   relBasis = smoothBasis(relBasis, cameraBasis(e.alpha, e.beta, e.gamma), 0.3);
 }
+// Congelar: la imagen y la orientación se quedan quietas para tocar nombres con calma.
+let frozen = null; // { kind: "rel" | "abs" } mientras está congelado
+const usingGyro = () => (frozen ? frozen.kind === "rel" : basis != null && basis === relBasis);
 function pickView() {
+  if (frozen) return;
   if (relBasis && absBasis) {
     basis = relBasis;
     if (gyroCorr != null) { corr = gyroCorr; mode = "giroscopio"; return; }
@@ -349,8 +384,20 @@ async function loadRelief(lat, lon) {
   recompute();
 }
 
+// --- Lugares guardados: dentro de un edificio el GPS se va decenas de metros; un punto fijo no. ---
+let gps = null;
+let spots = store.get("spots", []);       // [{ nombre, lat, lon, floor }] solo en este teléfono
+let spotName = store.get("spot", null);   // lugar en uso, o null = GPS
+const activeSpot = () => spots.find((x) => x.nombre === spotName) || null;
 function onPosition(p) {
-  pos = { lat: p.coords.latitude, lon: p.coords.longitude, acc: p.coords.accuracy };
+  gps = { lat: p.coords.latitude, lon: p.coords.longitude, acc: p.coords.accuracy };
+  applyPos();
+}
+function applyPos() {
+  const sp = activeSpot();
+  const src = sp ? { lat: sp.lat, lon: sp.lon, acc: 0, spot: sp.nombre } : gps;
+  if (!src) return;
+  pos = src;
   const moved = reliefFor ? distBearing(reliefFor.lat, reliefFor.lon, pos.lat, pos.lon).dist : Infinity;
   if (moved > 300) loadRelief(pos.lat, pos.lon);
   // El horizonte cuesta ~0.2 s; solo se recalcula si te moviste más de 30 m.
@@ -455,7 +502,7 @@ function draw() {
   const { heading } = headingPitch(basis);
   const trueHeading = (heading + corr + 360) % 360;
   $("status").textContent = !pos ? "Esperando GPS…"
-    : `${Math.round(trueHeading)}° ${card(trueHeading)} · ${Math.round(viewerAlt())} m · ±${Math.round(pos.acc)} m` + (reliefReady ? "" : " · cargando relieve…");
+    : `${Math.round(trueHeading)}° ${card(trueHeading)} · ${pos.spot ? `📍 ${pos.spot} · piso ${cfg.floor}` : `${Math.round(viewerAlt())} m · ±${Math.round(pos.acc)} m`}` + (reliefReady ? "" : " · cargando relieve…");
   $("calBadge").hidden = false;
   $("calBadge").textContent = calibrated ? "Calibrado" : "Sin calibrar";
   $("calBadge").className = calibrated ? "ok" : "warn";
@@ -548,12 +595,12 @@ $("focusCard").onclick = () => focus && openInfo(focus);
 
 // --- Hojas (paneles inferiores) ---
 function openSheet(id) {
-  for (const s of ["infoPanel", "pickPanel", "setPanel", "findPanel", "calPanel"]) $(s).hidden = s !== id;
+  for (const s of ["infoPanel", "pickPanel", "setPanel", "findPanel", "calPanel", "spotPanel"]) $(s).hidden = s !== id;
   $("backdrop").hidden = false;
   $("focusCard").hidden = true;
 }
 function closeSheets() {
-  for (const s of ["infoPanel", "pickPanel", "setPanel", "findPanel", "calPanel"]) $(s).hidden = true;
+  for (const s of ["infoPanel", "pickPanel", "setPanel", "findPanel", "calPanel", "spotPanel"]) $(s).hidden = true;
   $("backdrop").hidden = true;
   focus = null; // la tarjeta vuelve a aparecer en el siguiente cuadro
 }
@@ -704,10 +751,11 @@ function banner(text, [l1, f1] = ["Cancelar", endCal], second) {
 function openCalMenu() {
   endCal();
   $("calFloor").value = cfg.floor;
+  $("calWhere").textContent = "Ubicación: " + (pos?.spot ? `📍 ${pos.spot}` : gps ? `GPS ±${Math.round(gps.acc)} m` : "esperando GPS") + " · Cambiar";
   // Dentro de un depa el GPS suele fallar por decenas de metros: los edificios cercanos salen corridos.
-  const bad = pos && pos.acc > 25;
+  const bad = pos && !pos.spot && pos.acc > 25;
   $("calGps").hidden = !bad;
-  if (bad) $("calGps").textContent = `GPS impreciso (±${Math.round(pos.acc)} m). Cerca de una ventana o afuera mejora. Con el horizonte depende menos del GPS.`;
+  if (bad) $("calGps").textContent = `GPS impreciso (±${Math.round(pos.acc)} m). Guarda tu lugar en el mapa (botón de arriba) o usa el horizonte, que depende menos del GPS.`;
   openSheet("calPanel");
 }
 $("calFloor").onchange = (e) => setFloor(e.target.value);
@@ -800,7 +848,7 @@ function tryAuto() {
 function applyAuto(m) {
   const newCorr = wrap(corr + m.dh), pitch = cfg.pitch + m.dp;
   if (Math.abs(pitch) > 10) return;
-  if (basis === relBasis) {
+  if (usingGyro()) {
     gyroCorr = newCorr;
     if (absBasis) cfg.corr = wrap(headingPitch(relBasis).heading + gyroCorr - headingPitch(absBasis).heading);
   } else cfg.corr = newCorr;
@@ -821,21 +869,26 @@ function calTap(x, y) {
   const near = items.filter((l) => !l.onHorizon).map((l) => {
     const d = dirVector(l.bearing - corr, l.el);
     return { l, ang: Math.acos(Math.min(1, (d[0] * ray[0] + d[1] * ray[1] + d[2] * ray[2]) / len)) };
-  }).sort((a, b) => a.ang - b.ang).slice(0, 6);
+  }).sort((a, b) => a.ang - b.ang);
   markTap(x, y);
-  $("pickList").replaceChildren(...near.map(({ l }) => {
+  // Si la calibración está muy mal, lo que tocaste no sale entre los 6 más cercanos: "Otro lugar…" muestra todos.
+  const item = (l) => {
     const li = document.createElement("li");
     const btn = Object.assign(document.createElement("button"), { className: "btn" });
     btn.append(l.nombre, Object.assign(document.createElement("small"), { textContent: fmtDist(l.dist) }));
     btn.onclick = () => calPick(l);
     li.append(btn);
     return li;
-  }));
+  };
+  const more = Object.assign(document.createElement("button"), { className: "btn plain", textContent: "Otro lugar…" });
+  more.onclick = () => $("pickList").replaceChildren(...near.map(({ l }) => l).sort((a, b) => a.nombre.localeCompare(b.nombre, "es")).map(item));
+  const li = document.createElement("li"); li.append(more);
+  $("pickList").replaceChildren(...near.slice(0, 6).map(({ l }) => item(l)), li);
   openSheet("pickPanel");
 }
 // Guarda la orientación del teléfono y dónde tocaste.
 function markTap(x, y) {
-  pending = { basis: { ...basis }, u: x - view.cx, v: view.cy - y, kind: basis === relBasis ? "rel" : "abs" };
+  pending = { basis: { ...basis }, u: x - view.cx, v: view.cy - y, kind: usingGyro() ? "rel" : "abs" };
   Object.assign($("tapMark").style, { left: x + "px", top: y + "px" });
   $("tapMark").hidden = false;
 }
@@ -874,8 +927,34 @@ function calPick(l) {
   else banner(`Listo con ${l.nombre}. Para afinar el zoom, toca otro lugar lejos de este, hacia un lado.`, ["Terminar", endCal]);
 }
 
+// Arrastrar la vista: los nombres siguen al dedo. Lado a lado corrige el rumbo, arriba/abajo la inclinación.
+let drag = null, dragged = false;
+cv.addEventListener("pointerdown", (e) => { drag = { x: e.clientX, y: e.clientY, id: e.pointerId }; dragged = false; });
+cv.addEventListener("pointermove", (e) => {
+  if (!drag || e.pointerId !== drag.id || !view) return;
+  const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+  if (!dragged && Math.hypot(dx, dy) < 10) return;
+  dragged = true;
+  nudge(-Math.atan(dx / view.f) * DEG, Math.atan(dy / view.f) * DEG);
+  drag.x = e.clientX; drag.y = e.clientY;
+});
+const endDrag = () => {
+  if (dragged) { store.set("corr", cfg.corr); store.set("pitch", cfg.pitch); }
+  drag = null;
+};
+cv.addEventListener("pointerup", endDrag);
+cv.addEventListener("pointercancel", endDrag);
+function nudge(dh, dp) {
+  if (usingGyro()) {
+    gyroCorr = (gyroCorr ?? autoCorr ?? corr) + dh; corr = gyroCorr;
+    if (absBasis) cfg.corr = wrap(headingPitch(relBasis).heading + gyroCorr - headingPitch(absBasis).heading);
+  } else { cfg.corr = wrap(cfg.corr + dh); corr = cfg.corr; }
+  cfg.pitch = Math.max(-10, Math.min(10, cfg.pitch + dp));
+  calibrated = true;
+}
+
 cv.addEventListener("click", (e) => {
-  if (!view) return;
+  if (!view || dragged) return;
   if (calMode && guided != null) { markTap(e.clientX, e.clientY); return calPick(items.find((i) => i.nombre === GUIA[guided])); }
   if (calMode) return calTap(e.clientX, e.clientY);
   const h = hits.find((h) => e.clientX >= h.x0 && e.clientX <= h.x1 && e.clientY >= h.y0 && e.clientY <= h.y1);
@@ -887,6 +966,96 @@ function toast(msg) {
   const t = $("toast"); t.textContent = msg; t.style.display = "block";
   clearTimeout(toastTimer); toastTimer = setTimeout(() => (t.style.display = "none"), 4000);
 }
+
+// --- Congelar ---
+$("btnFreeze").onclick = () => {
+  if (frozen) { frozen = null; video.play().catch(() => {}); }
+  else if (basis) { frozen = { kind: usingGyro() ? "rel" : "abs" }; video.pause(); toast("Imagen congelada. Toca los nombres o arrastra para alinear."); }
+  $("btnFreeze").classList.toggle("on", !!frozen);
+  $("btnFreeze").textContent = frozen ? "▶" : "⏸";
+  $("btnFreeze").setAttribute("aria-label", frozen ? "Seguir" : "Congelar imagen");
+};
+
+// --- Lugares guardados ---
+function useSpot(name) {
+  spotName = name; store.set("spot", name);
+  const sp = activeSpot();
+  if (sp) setFloor(sp.floor);
+  calcFor = null; applyPos();
+}
+function openSpots() {
+  const rows = [];
+  const mk = (label, sub, active, onclick) => {
+    const btn = Object.assign(document.createElement("button"), { className: "btn" + (active ? " main" : "") });
+    btn.append(label, Object.assign(document.createElement("small"), { textContent: sub }));
+    btn.onclick = onclick;
+    return btn;
+  };
+  rows.push(mk("GPS del teléfono", gps ? `±${Math.round(gps.acc)} m` : "esperando…", !spotName, () => { useSpot(null); closeSheets(); toast("Usando el GPS."); }));
+  for (const sp of spots) {
+    const del = Object.assign(document.createElement("button"), { className: "btn del", textContent: "✕", ariaLabel: "Borrar " + sp.nombre });
+    del.onclick = () => { spots = spots.filter((x) => x !== sp); store.set("spots", spots); if (spotName === sp.nombre) useSpot(null); openSpots(); };
+    const row = Object.assign(document.createElement("div"), { className: "row" });
+    row.append(mk(sp.nombre, `piso ${sp.floor}`, spotName === sp.nombre, () => { useSpot(sp.nombre); closeSheets(); toast(`Usando ${sp.nombre}.`); }), del);
+    rows.push(row);
+  }
+  $("spotList").replaceChildren(...rows.map((r) => { const li = document.createElement("li"); li.append(r); return li; }));
+  $("spotNew").hidden = true; $("spotAdd").hidden = false;
+  openSheet("spotPanel");
+}
+$("calWhere").onclick = openSpots;
+$("setWhere").onclick = openSpots;
+$("spotClose").onclick = closeSheets;
+
+// Mapa sin librerías: mosaico de 5×5 teselas de OpenStreetMap (zoom 17, ~1.2 m por pixel) centrado en tu posición.
+// ponytail: no se puede arrastrar ni hacer zoom; cubre ~1.4 km. Si el GPS se fue más lejos, sal a la ventana y reabre.
+const MAPZ = 17, TILE = 256;
+let mapC = null, pin = null;
+const toTile = (lat, lon) => {
+  const n = 2 ** MAPZ, r = (lat * Math.PI) / 180;
+  return { x: ((lon + 180) / 360) * n, y: ((1 - Math.log(Math.tan(r) + 1 / Math.cos(r)) / Math.PI) / 2) * n };
+};
+const fromTile = (x, y) => {
+  const n = 2 ** MAPZ;
+  return { lat: (Math.atan(Math.sinh(Math.PI * (1 - (2 * y) / n))) * 180) / Math.PI, lon: (x / n) * 360 - 180 };
+};
+function drawMap() {
+  const c = $("spotMap"), g = c.getContext("2d"), dpr = devicePixelRatio || 1, W = c.clientWidth, H = c.clientHeight;
+  c.width = W * dpr; c.height = H * dpr; g.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const px = (t) => ({ x: W / 2 + (t.x - mapC.x) * TILE, y: H / 2 + (t.y - mapC.y) * TILE });
+  const draw = () => {
+    if (!pin) return;
+    const p = px(toTile(pin.lat, pin.lon));
+    g.lineWidth = 3; g.strokeStyle = "#000"; g.fillStyle = "#ff4d4d";
+    g.beginPath(); g.arc(p.x, p.y, 9, 0, 7); g.fill(); g.stroke();
+  };
+  for (let i = -2; i <= 2; i++) for (let j = -2; j <= 2; j++) {
+    const tx = Math.floor(mapC.x) + i, ty = Math.floor(mapC.y) + j, img = new Image();
+    img.onload = () => { const p = px({ x: tx, y: ty }); g.drawImage(img, p.x, p.y, TILE, TILE); draw(); };
+    img.src = `https://tile.openstreetmap.org/${MAPZ}/${tx}/${ty}.png`;
+  }
+  draw();
+}
+$("spotAdd").onclick = () => {
+  if (!pos) { toast("Espera a tener GPS."); return; }
+  pin = { lat: pos.lat, lon: pos.lon }; mapC = toTile(pin.lat, pin.lon);
+  $("spotNew").hidden = false; $("spotAdd").hidden = true;
+  $("spotFloor").value = cfg.floor; $("spotName").value = "";
+  drawMap();
+};
+$("spotMap").addEventListener("click", (e) => {
+  const c = $("spotMap"), r = c.getBoundingClientRect();
+  pin = fromTile(mapC.x + (e.clientX - r.left - r.width / 2) / TILE, mapC.y + (e.clientY - r.top - r.height / 2) / TILE);
+  drawMap();
+});
+$("spotSave").onclick = () => {
+  const nombre = $("spotName").value.trim().slice(0, 30), floor = Number($("spotFloor").value);
+  if (!nombre) { toast("Ponle un nombre."); return; }
+  if (!(floor >= 0 && floor <= 100) || $("spotFloor").value === "") { toast("Piso entre 0 y 100."); return; }
+  spots = [...spots.filter((x) => x.nombre !== nombre), { nombre, lat: pin.lat, lon: pin.lon, floor }];
+  store.set("spots", spots);
+  useSpot(nombre); closeSheets(); toast(`Guardado: ${nombre}. Ahora calibra de nuevo.`);
+};
 
 // --- Ajustes ---
 const syncFov = () => { $("inFov").value = cfg.fov; $("fovOut").textContent = Math.round(cfg.fov); };
@@ -935,6 +1104,7 @@ $("btnStart").onclick = async () => {
     });
     autoPending = true; // calibración automática al abrir, en cuanto haya GPS, relieve y video
   } catch { toast("Sin cámara. Revisa los permisos del navegador."); }
+  applyPos(); // si hay un lugar guardado en uso, no hace falta esperar al GPS
   navigator.geolocation.watchPosition(onPosition, () => toast("Sin ubicación. Revisa los permisos."),
     { enableHighAccuracy: true, maximumAge: 5000 });
   if ("ondeviceorientationabsolute" in window) addEventListener("deviceorientationabsolute", onAbsolute);
