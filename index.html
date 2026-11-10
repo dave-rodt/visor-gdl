@@ -386,20 +386,12 @@ function drawSkyline() {
   outline(path, null, "rgba(255,255,255,.5)", 1.2);
 }
 
-// Montaña: cresta verde gruesa y relleno que se desvanece hacia abajo.
+// Montaña: solo la cresta, en verde.
 function drawRidge(pts) {
   const proj = pts.map((s) => P(s.az, s.angle));
   if (proj.some((p) => !p)) return;
-  const low = Math.min(...pts.map((s) => s.angle)) - 0.8;
-  const bl = P(pts[0].az, low), br = P(pts.at(-1).az, low);
-  if (!bl || !br) return;
-  const fill = new Path2D(), line = new Path2D();
-  proj.forEach((p, i) => { (i ? fill.lineTo(p.x, p.y) : fill.moveTo(p.x, p.y)); (i ? line.lineTo(p.x, p.y) : line.moveTo(p.x, p.y)); });
-  fill.lineTo(br.x, br.y); fill.lineTo(bl.x, bl.y); fill.closePath();
-  const top = Math.min(...proj.map((p) => p.y)), bottom = Math.max(bl.y, br.y);
-  const g = ctx.createLinearGradient(0, top, 0, bottom);
-  g.addColorStop(0, "rgba(155,231,161,.42)"); g.addColorStop(1, "rgba(155,231,161,0)");
-  ctx.fillStyle = g; ctx.fill(fill);
+  const line = new Path2D();
+  proj.forEach((p, i) => (i ? line.lineTo(p.x, p.y) : line.moveTo(p.x, p.y)));
   outline(line, null, "#9be7a1", 3);
 }
 
@@ -407,19 +399,17 @@ function drawRidge(pts) {
 function drawBuilding(l, h0) {
   const shape = PERFILES[l.perfil] || PERFILES.bloque;
   const base = l.alt - l.h;
-  const pt = ([nx, ny]) => P(l.bearing + Math.atan2(nx * l.w, l.dist) * DEG, elevAngle(h0, base + ny * l.h, l.dist));
-  const poly = shape.poly.map(pt);
+  const poly = shape.poly.map(([nx, ny]) => P(l.bearing + Math.atan2(nx * l.w, l.dist) * DEG, elevAngle(h0, base + ny * l.h, l.dist)));
   if (poly.some((p) => !p)) return;
-  const path = new Path2D();
-  poly.forEach((p, i) => (i ? path.lineTo(p.x, p.y) : path.moveTo(p.x, p.y)));
+  // Solo el contorno, más grande que el edificio para enmarcarlo: 25% más, y al menos 34 px de alto
+  // en los lejanos (sin pasar de 5 veces ni de 140 px de ancho).
+  const xs = poly.map((p) => p.x), ys = poly.map((p) => p.y);
+  const x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys);
+  const k = Math.max(1.25, Math.min(34 / (y1 - y0 || 1), 5, 140 / (x1 - x0 || 1)));
+  const cx = (x0 + x1) / 2, cy = (y0 + y1) / 2, path = new Path2D();
+  poly.forEach((p, i) => { const x = cx + (p.x - cx) * k, y = cy + (p.y - cy) * k; i ? path.lineTo(x, y) : path.moveTo(x, y); });
   path.closePath();
-  outline(path, "rgba(255,213,74,.22)", "#ffd54a", 1.8);
-  for (const [a, b] of shape.lines || []) {
-    const pa = pt(a), pb = pt(b);
-    if (!pa || !pb) continue;
-    const ln = new Path2D(); ln.moveTo(pa.x, pa.y); ln.lineTo(pb.x, pb.y);
-    outline(ln, null, "#ffd54a", 1);
-  }
+  outline(path, null, "#ffd54a", 2.2);
 }
 
 function drawIcon(tipo, x, y, color) {
@@ -453,7 +443,7 @@ function draw() {
   const h0 = viewerAlt();
   view = { b: tiltBasis(basis, cfg.pitch), f: focal(), cx: W / 2, cy: H / 2 };
   if (skyline) drawSkyline();
-  if (autoPending && skyline && video.videoWidth) { autoPending = false; startAuto(); }
+  if (autoPending && skyline && video.videoWidth) { autoPending = false; startGuided(); }
   if (autoMode) autoStep();
   if (autoDots) {
     ctx.fillStyle = "#4fc3ff";
@@ -677,7 +667,8 @@ function startCal() {
   banner("Toca en la pantalla, justo encima, un lugar que reconozcas.");
 }
 function endCal() {
-  calMode = autoMode = false; autoDots = null; pending = null;
+  if (guided != null) target = null;
+  calMode = autoMode = false; autoDots = null; pending = null; guided = null;
   $("banner").hidden = true; $("tapMark").hidden = true; $("guide").hidden = !target; focus = null;
 }
 // Aviso arriba con uno o dos botones: banner(texto, [etiqueta, acción], [etiqueta, acción]?)
@@ -688,8 +679,28 @@ function banner(text, [l1, f1] = ["Cancelar", endCal], second) {
   if (second) Object.assign($("bannerBtn2"), { textContent: second[0], onclick: second[1] });
   $("banner").hidden = false;
 }
-$("btnCal").onclick = () => startAuto();
-$("calBadge").onclick = () => startAuto();
+$("btnCal").onclick = () => startGuided();
+$("calBadge").onclick = () => startGuided();
+
+// --- Calibración guiada: tocar la punta real del Hotel Riu y luego la de Punto São Paulo ---
+// El primero fija rumbo e inclinación; el segundo los afina y, si lo tocas lejos del centro, también el zoom.
+const GUIA = ["Hotel Riu", "Punto São Paulo"];
+let guided = null; // índice en GUIA del lugar que toca ahora
+
+function startGuided() {
+  const l = items.find((i) => i.nombre === GUIA[0]);
+  if (!l || l.hidden || l.dist > 15000) return startAuto(); // lejos de la azotea: usa el horizonte
+  if (!basis) { toast("Espera a tener la brújula."); return; }
+  endCal();
+  calMode = true; calPoints = []; guided = 0;
+  $("focusCard").hidden = true;
+  guideStep();
+}
+function guideStep() {
+  target = GUIA[guided]; guideMsg = ""; $("guide").hidden = false;
+  banner(`Calibrar ${guided + 1}/2: busca ${GUIA[guided]} y toca la punta real del edificio.`,
+    ["Omitir", skipAuto], guided === 0 ? ["Usar horizonte", startAuto] : ["Terminar", endCal]);
+}
 
 // --- Calibración automática ---
 // Busca en la cámara la línea entre cielo y tierra y la desliza sobre el horizonte del relieve.
@@ -773,9 +784,7 @@ function calTap(x, y) {
     const d = dirVector(l.bearing - corr, l.el);
     return { l, ang: Math.acos(Math.min(1, (d[0] * ray[0] + d[1] * ray[1] + d[2] * ray[2]) / len)) };
   }).sort((a, b) => a.ang - b.ang).slice(0, 6);
-  pending = { basis: { ...basis }, u, v, kind: basis === relBasis ? "rel" : "abs" };
-  Object.assign($("tapMark").style, { left: x + "px", top: y + "px" });
-  $("tapMark").hidden = false;
+  markTap(x, y);
   $("pickList").replaceChildren(...near.map(({ l }) => {
     const li = document.createElement("li");
     const btn = Object.assign(document.createElement("button"), { className: "btn" });
@@ -785,6 +794,12 @@ function calTap(x, y) {
     return li;
   }));
   openSheet("pickPanel");
+}
+// Guarda la orientación del teléfono y dónde tocaste.
+function markTap(x, y) {
+  pending = { basis: { ...basis }, u: x - view.cx, v: view.cy - y, kind: basis === relBasis ? "rel" : "abs" };
+  Object.assign($("tapMark").style, { left: x + "px", top: y + "px" });
+  $("tapMark").hidden = false;
 }
 function cancelPick() { pending = null; $("tapMark").hidden = true; closeSheets(); }
 $("pickCancel").onclick = cancelPick;
@@ -797,7 +812,8 @@ function calPick(l) {
   const pts = [...calPoints.filter((p) => p.kind === pending.kind && now - p.t < 180000).slice(-2),
     { ...pending, bearing: l.bearing, el: l.el, t: now, nombre: l.nombre }];
   const spread = Math.max(...pts.map((a) => Math.max(...pts.map((b) => Math.abs(wrap(a.bearing - b.bearing))))));
-  const fitF = pts.length >= 2 && spread >= 10;
+  // El zoom solo se puede medir si algún toque cayó lejos del centro de la pantalla.
+  const fitF = pts.length >= 2 && spread >= 10 && Math.max(...pts.map((p) => Math.hypot(p.u, p.v))) > 80;
   const s = solveCalibration(pts, { corr, pitch: cfg.pitch, f: focal() }, fitF);
   const fov = fitF ? fovFromF(s.f) : cfg.fov;
   if (!Number.isFinite(s.corr) || Math.abs(s.pitch) > 10 || fov < 30 || fov > 110) {
@@ -814,12 +830,15 @@ function calPick(l) {
   if (fitF) { cfg.fov = Math.round(fov * 10) / 10; store.set("fov", cfg.fov); syncFov(); }
   calibrated = true;
   calPoints = pts; pending = null;
+  if (guided === 0) { guided = 1; guideStep(); return; }
+  if (guided === 1) { endCal(); toast(fitF ? "Calibración completa." : "Calibrado. Para afinar el zoom, toca otro lugar cerca de una orilla."); return; }
   if (fitF) { endCal(); toast("Calibración completa. Si se mueve con el tiempo, vuelve a calibrar."); }
   else banner(`Listo con ${l.nombre}. Para afinar el zoom, toca otro lugar lejos de este, hacia un lado.`, ["Terminar", endCal]);
 }
 
 cv.addEventListener("click", (e) => {
   if (!view) return;
+  if (calMode && guided != null) { markTap(e.clientX, e.clientY); return calPick(items.find((i) => i.nombre === GUIA[guided])); }
   if (calMode) return calTap(e.clientX, e.clientY);
   const h = hits.find((h) => e.clientX >= h.x0 && e.clientX <= h.x1 && e.clientY >= h.y0 && e.clientY <= h.y1);
   if (h) openInfo(h.l);
@@ -862,6 +881,7 @@ $("btnStart").onclick = async () => {
     cfg.corr = 0; cfg.pitch = 0;
     onPosition({ coords: { latitude: lat, longitude: lon, accuracy: 0 } });
     absBasis = cameraBasis(-h, 90 + p, 0);
+    addEventListener("deviceorientationabsolute", onAbsolute); // las pruebas pueden girar el teléfono
     return;
   }
   try {
