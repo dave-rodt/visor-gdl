@@ -70,6 +70,8 @@
   .btn small { color: var(--muted); margin-left: 6px; }
   .btn.main { background: var(--accent); color: #000; text-align: center; font-weight: 600; }
   .btn.plain { text-align: center; }
+  .btn.opt { padding: 12px 16px; font-weight: 600; }
+  .btn small.d { display: block; margin: 4px 0 0; font-weight: 400; line-height: 1.35; }
 
   #carousel { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; background: #000; }
   #carousel::-webkit-scrollbar { display: none; }
@@ -142,6 +144,19 @@
     <p id="infoText"></p>
     <p id="infoLink"></p>
     <ul id="credits"></ul>
+  </div>
+</section>
+
+<section id="calPanel" class="sheet" role="dialog" aria-modal="true" aria-labelledby="calTitle" hidden>
+  <div class="grip"></div>
+  <div class="body">
+    <h2 id="calTitle">¿Cómo calibrar?</h2>
+    <p>Calibrar hace que los nombres caigan justo sobre cada lugar.</p>
+    <button id="calGuided" class="btn opt">Con edificios <small>Recomendado</small><small class="d">Toca la punta del Hotel Riu y luego la de Punto São Paulo. Lo más preciso.</small></button>
+    <button id="calSky" class="btn opt">Con el horizonte<small class="d">Apunta a los cerros; la cámara busca su borde sola. Necesita buena vista.</small></button>
+    <button id="calAny" class="btn opt">Tocar cualquier lugar<small class="d">Toca algo que reconozcas y elige su nombre en la lista.</small></button>
+    <button id="calNone" class="btn opt">Solo GPS y brújula<small class="d">Sin calibrar. Rápido, pero los nombres pueden salir corridos unos grados.</small></button>
+    <button id="calClose" class="btn plain">Cerrar</button>
   </div>
 </section>
 
@@ -443,7 +458,7 @@ function draw() {
   const h0 = viewerAlt();
   view = { b: tiltBasis(basis, cfg.pitch), f: focal(), cx: W / 2, cy: H / 2 };
   if (skyline) drawSkyline();
-  if (autoPending && skyline && video.videoWidth) { autoPending = false; startGuided(); }
+  if (autoPending && skyline && video.videoWidth) { autoPending = false; openCalMenu(); }
   if (autoMode) autoStep();
   if (autoDots) {
     ctx.fillStyle = "#4fc3ff";
@@ -527,12 +542,12 @@ $("focusCard").onclick = () => focus && openInfo(focus);
 
 // --- Hojas (paneles inferiores) ---
 function openSheet(id) {
-  for (const s of ["infoPanel", "pickPanel", "setPanel", "findPanel"]) $(s).hidden = s !== id;
+  for (const s of ["infoPanel", "pickPanel", "setPanel", "findPanel", "calPanel"]) $(s).hidden = s !== id;
   $("backdrop").hidden = false;
   $("focusCard").hidden = true;
 }
 function closeSheets() {
-  for (const s of ["infoPanel", "pickPanel", "setPanel", "findPanel"]) $(s).hidden = true;
+  for (const s of ["infoPanel", "pickPanel", "setPanel", "findPanel", "calPanel"]) $(s).hidden = true;
   $("backdrop").hidden = true;
   focus = null; // la tarjeta vuelve a aparecer en el siguiente cuadro
 }
@@ -679,8 +694,16 @@ function banner(text, [l1, f1] = ["Cancelar", endCal], second) {
   if (second) Object.assign($("bannerBtn2"), { textContent: second[0], onclick: second[1] });
   $("banner").hidden = false;
 }
-$("btnCal").onclick = () => startGuided();
-$("calBadge").onclick = () => startGuided();
+// Menú de calibración: al abrir la app y con el botón Calibrar.
+function openCalMenu() { endCal(); openSheet("calPanel"); }
+$("btnCal").onclick = openCalMenu;
+$("calBadge").onclick = openCalMenu;
+$("calClose").onclick = closeSheets;
+$("calGuided").onclick = () => { closeSheets(); startGuided(); };
+$("calSky").onclick = () => { closeSheets(); startAuto(); };
+$("calAny").onclick = () => { closeSheets(); startCal(); };
+// Solo brújula: se olvida la calibración del giroscopio; el rumbo vuelve a seguir a la brújula.
+$("calNone").onclick = () => { closeSheets(); gyroCorr = autoCorr = null; calibrated = false; toast("Usando solo GPS y brújula."); };
 
 // --- Calibración guiada: tocar la punta real del Hotel Riu y luego la de Punto São Paulo ---
 // El primero fija rumbo e inclinación; el segundo los afina y, si lo tocas lejos del centro, también el zoom.
