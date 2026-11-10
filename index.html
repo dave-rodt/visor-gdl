@@ -304,6 +304,13 @@ function onRelative(e) {
   if (e.alpha == null) return;
   if (e.absolute) return onAbsolute(e); // teléfonos sin giroscopio
   lastSensor = performance.now();
+  // iPhone: no hay evento absoluto; la brújula llega aparte como webkitCompassHeading
+  // (rumbo de la cámara, magnético). Se gira alpha para que el rumbo coincida con ella.
+  // ponytail: sin probar en un iPhone real; si el rumbo sale volteado, revisar el signo.
+  if (e.webkitCompassHeading != null && e.webkitCompassAccuracy >= 0) {
+    const h = headingPitch(cameraBasis(e.alpha, e.beta, e.gamma)).heading;
+    onAbsolute({ alpha: e.alpha + h - e.webkitCompassHeading, beta: e.beta, gamma: e.gamma });
+  }
   relBasis = smoothBasis(relBasis, cameraBasis(e.alpha, e.beta, e.gamma), 0.3);
 }
 // Congelar: la imagen y la orientación se quedan quietas para tocar nombres con calma.
@@ -496,7 +503,7 @@ function draw() {
   hits = [];
   pickView();
   if (!basis) {
-    if (lastSensor === 0 && performance.now() > 3000) $("status").textContent = "Este navegador no da la brújula. Usa Chrome en Android.";
+    if (lastSensor === 0 && performance.now() > 3000) $("status").textContent = "Sin brújula. En iPhone: recarga la página y permite el acceso al movimiento.";
     return;
   }
   const { heading } = headingPitch(basis);
@@ -1092,6 +1099,8 @@ $("setClose").onclick = closeSheets;
 const sim = new URLSearchParams(location.search).get("sim")?.split(",").map(Number);
 
 $("btnStart").onclick = async () => {
+  // iPhone: los sensores de movimiento piden permiso, y solo se puede pedir al tocar.
+  try { await DeviceOrientationEvent.requestPermission?.(); } catch {}
   $("start").hidden = true;
   draw();
   if (sim) {
