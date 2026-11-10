@@ -40,7 +40,6 @@ export const LANDMARKS = [
   // Zonas y ciudades
   { nombre: "Tlaquepaque", lat: 20.639678, lon: -103.31183, alt: 1583, tipo: "z", wiki: "San Pedro Tlaquepaque" },
   { nombre: "Puerto Vallarta", lat: 20.610364, lon: -105.2351, alt: 0, tipo: "z", wiki: "Puerto Vallarta" },
-  { nombre: "Newport, Rhode Island", lat: 41.4901, lon: -71.3128, alt: 0, tipo: "z", wiki: "Newport (Rhode Island)" },
 ];
 
 // Siluetas vistas de frente. x de -0.5 a 0.5 (fracción del ancho), y de 0 (suelo) a 1 (punta).
