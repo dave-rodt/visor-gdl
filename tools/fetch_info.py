@@ -1,4 +1,5 @@
-"""Download Spanish Wikipedia text and Wikimedia Commons photos for each landmark.
+"""Download Spanish Wikipedia text and Wikimedia Commons photos for each landmark,
+plus the English article text where one exists (texto_en, url_en).
 
 Writes info/info.json and info/img/*.jpg so the app opens details instantly and offline.
 Run from the repo root:  python3 -I tools/fetch_info.py
@@ -30,6 +31,8 @@ def get(url, raw=False):
             if e.code != 429 and e.code < 500:
                 raise
             print("  retry", e.code, flush=True)
+        except (urllib.error.URLError, ConnectionError, TimeoutError) as e:  # dropped connection: try again
+            print("  retry", e, flush=True)
     raise RuntimeError("gave up on " + url)
 
 
@@ -66,6 +69,17 @@ def photo(file_title, base):
     }
 
 
+def english(wiki):
+    """English summary of the article linked from the Spanish one, or None if there is none."""
+    q = urllib.parse.urlencode({"action": "query", "titles": wiki, "prop": "langlinks", "lllang": "en", "redirects": 1, "format": "json"})
+    page = next(iter(get("https://es.wikipedia.org/w/api.php?" + q)["query"]["pages"].values()))
+    links = page.get("langlinks")
+    if not links:
+        return None
+    s = get("https://en.wikipedia.org/api/rest_v1/page/summary/" + urllib.parse.quote(links[0]["*"].replace(" ", "_")))
+    return s and {"texto_en": s.get("extract", ""), "url_en": s["content_urls"]["mobile"]["page"]}
+
+
 def main():
     IMG.mkdir(parents=True, exist_ok=True)
     src = (ROOT / "landmarks.js").read_text()
@@ -73,7 +87,13 @@ def main():
               re.findall(r'''nombre: "([^"]+)"[^\n]*?(?:wiki: (?:"([^"]+)"|'([^']+)'))?\s*}''', src)]
     out = json.loads((OUT / "info.json").read_text()) if (OUT / "info.json").exists() else {}
     for nombre, wiki in places:
-        if not wiki or nombre in out:
+        if not wiki:
+            continue
+        if nombre in out:
+            if "url_en" not in out[nombre] and not out[nombre].get("sin_en"):
+                print(nombre, "-> en", flush=True)
+                out[nombre].update(english(wiki) or {"sin_en": True})
+                (OUT / "info.json").write_text(json.dumps(out, ensure_ascii=False, indent=1))
             continue
         print(nombre, "->", wiki, flush=True)
         t = urllib.parse.quote(wiki.replace(" ", "_"))
@@ -99,7 +119,7 @@ def main():
             if p:
                 print("  ", title, flush=True)
                 fotos.append(p)
-        out[nombre] = {"texto": s.get("extract", ""), "url": s["content_urls"]["mobile"]["page"], "fotos": fotos}
+        out[nombre] = {"texto": s.get("extract", ""), "url": s["content_urls"]["mobile"]["page"], "fotos": fotos, **(english(wiki) or {"sin_en": True})}
         (OUT / "info.json").write_text(json.dumps(out, ensure_ascii=False, indent=1))
         print(f"  ok, {len(fotos)} fotos", flush=True)
 

@@ -224,3 +224,11 @@ export function matchSkyline(pts, S, range = 25) {
     : clean(best) > 0.75 * other || Math.abs(best.dh) > range - 0.5 ? "dudoso" : "";
   return { dh: Math.round(best.dh * 10) / 10, dp, inliers, ok: !reason, reason };
 }
+
+// Cuánto se dispersan unos ángulos (grados), sin romperse al cruzar 0°/360°: desviación estándar circular.
+export function angleSpread(degs) {
+  let x = 0, y = 0;
+  for (const d of degs) { x += Math.cos(rad(d)); y += Math.sin(rad(d)); }
+  const R = Math.min(1, Math.hypot(x, y) / degs.length);
+  return Math.sqrt(-2 * Math.log(R)) * (180 / Math.PI);
+}

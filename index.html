@@ -19,6 +19,8 @@
   video { object-fit: cover; }
   button { font: inherit; color: inherit; border: 0; cursor: pointer; }
   .glass { background: var(--glass); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
+  button:focus-visible, select:focus-visible, input:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+  .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
   #cross { position: fixed; left: 50%; top: 50%; width: 40px; height: 40px; margin: -20px 0 0 -20px; pointer-events: none;
            border: 2px solid rgba(255,255,255,.9); border-radius: 50%; box-shadow: 0 0 0 1px rgba(0,0,0,.5), inset 0 0 0 1px rgba(0,0,0,.5); }
@@ -26,14 +28,14 @@
 
   #top { position: fixed; top: max(10px, env(safe-area-inset-top)); left: 12px; right: 12px; display: flex; gap: 8px; align-items: center; justify-content: center; pointer-events: none; }
   #status { padding: 7px 14px; border-radius: 999px; font-size: 14px; font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  #calBadge { pointer-events: auto; padding: 7px 12px; border-radius: 999px; font-size: 13px; font-weight: 600; color: #000; }
+  #calBadge { pointer-events: auto; min-height: 44px; padding: 7px 14px; border-radius: 999px; font-size: 13px; font-weight: 600; color: #000; }
   #calBadge.warn { background: var(--warn); }
   #calBadge.ok { background: var(--ok); }
 
-  #banner { position: fixed; top: calc(max(10px, env(safe-area-inset-top)) + 46px); left: 12px; right: 12px; display: flex; gap: 10px; align-items: center;
+  #banner { position: fixed; top: calc(max(10px, env(safe-area-inset-top)) + 52px); left: 12px; right: 12px; display: flex; gap: 10px; align-items: center;
             padding: 10px 10px 10px 14px; border-radius: 14px; font-size: 15px; }
   #banner span { flex: 1; }
-  #banner button { padding: 8px 14px; min-height: 40px; border-radius: 10px; background: #fff; color: #000; font-weight: 600; }
+  #banner button { padding: 8px 14px; min-height: 44px; border-radius: 10px; background: #fff; color: #000; font-weight: 600; }
   #banner button.plain { background: none; color: #fff; text-decoration: underline; padding: 8px 4px; }
 
   #tapMark { position: fixed; width: 28px; height: 28px; margin: -14px 0 0 -14px; border: 3px solid var(--accent); border-radius: 50%; pointer-events: none; box-shadow: 0 0 0 2px rgba(0,0,0,.6); }
@@ -53,16 +55,24 @@
   #btnFreeze { position: fixed; right: 12px; bottom: calc(max(12px, env(safe-area-inset-bottom)) + 66px); width: 52px; height: 52px; border-radius: 50%; font-size: 20px; }
   #btnFreeze.on { background: var(--accent); color: #000; }
   #overlay { touch-action: none; }
-  #spotMap { position: static; display: block; width: 100%; height: 300px; border-radius: 12px; background: #222; touch-action: manipulation; }
+  .map { position: relative; }
+  .map canvas { position: static; display: block; width: 100%; height: 300px; border-radius: 12px; background: #222; touch-action: none; }
+  #findMap { height: min(52vh, 420px); }
+  .zoom { position: absolute; right: 8px; top: 8px; display: flex; flex-direction: column; gap: 6px; }
+  .zoom button { width: 44px; height: 44px; border-radius: 10px; background: #fff; color: #000; font-size: 24px; font-weight: 700; box-shadow: 0 1px 4px rgba(0,0,0,.5); }
+  .tabs { display: flex; gap: 6px; margin: 4px 0 12px; padding: 4px; border-radius: 12px; background: #2a2a2a; }
+  .tabs button { flex: 1; min-height: 44px; border-radius: 9px; background: none; font-weight: 600; }
+  .tabs button[aria-selected="true"] { background: #fff; color: #000; }
+  select { font: inherit; width: 100%; min-height: 44px; padding: 10px; margin-top: 6px; border-radius: 10px; border: 1px solid #444; background: #000; color: #fff; }
   .mapNote { font-size: 12px; color: var(--muted) !important; margin: 4px 0 12px !important; }
   .row { display: flex; gap: 8px; align-items: center; }
   .row .btn { flex: 1; }
   .row .del { flex: 0 0 50px; text-align: center; }
-  #guide { position: fixed; top: calc(max(10px, env(safe-area-inset-top)) + 46px); left: 12px; right: 12px; display: flex; gap: 10px; align-items: center;
+  #guide { position: fixed; top: calc(max(10px, env(safe-area-inset-top)) + 52px); left: 12px; right: 12px; display: flex; gap: 10px; align-items: center;
            padding: 8px 8px 8px 14px; border-radius: 14px; font-size: 15px; }
   #guide span { flex: 1; }
-  #banner:not([hidden]) ~ #guide { top: calc(max(10px, env(safe-area-inset-top)) + 150px); }
-  #guide button { width: 40px; height: 40px; border-radius: 50%; background: rgba(255,255,255,.15); }
+  #banner:not([hidden]) ~ #guide { top: calc(max(10px, env(safe-area-inset-top)) + 156px); }
+  #guide button { width: 44px; height: 44px; border-radius: 50%; background: rgba(255,255,255,.15); }
   .group { margin: 16px 0 8px; font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
 
   #backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.45); }
@@ -73,7 +83,7 @@
   .sheet p { margin: 0 0 14px; color: #ddd; }
   .sheet ul { list-style: none; margin: 0 0 14px; padding: 0; }
   .sheet a { color: var(--accent); }
-  .sheet .close { position: absolute; top: 10px; right: 10px; width: 40px; height: 40px; border-radius: 50%; background: rgba(0,0,0,.55); color: #fff; font-size: 18px; z-index: 2; }
+  .sheet .close { position: absolute; top: 10px; right: 10px; width: 44px; height: 44px; border-radius: 50%; background: rgba(0,0,0,.55); color: #fff; font-size: 18px; z-index: 2; }
   .sheet .grip { width: 40px; height: 4px; border-radius: 2px; background: #444; margin: 8px auto 0; }
   .btn { display: block; width: 100%; min-height: 50px; border-radius: 12px; background: #2a2a2a; color: #fff; text-align: left; padding: 0 16px; margin-bottom: 8px; }
   .btn small { color: var(--muted); margin-left: 6px; }
@@ -102,17 +112,25 @@
 
   .sheet label { display: block; margin-bottom: 16px; color: #ddd; }
   .sheet input[type=number], .sheet input[type=text] { font: inherit; width: 100%; padding: 12px; margin-top: 6px; border-radius: 10px; border: 1px solid #444; background: #000; color: #fff; }
-  .sheet input[type=range] { width: 100%; margin-top: 10px; accent-color: var(--accent); }
+  .sheet input[type=range] { width: 100%; height: 44px; margin: 4px 0 0; accent-color: var(--accent); }
 
-  #start { position: fixed; inset: 0; display: flex; flex-direction: column; justify-content: center; padding: 28px; gap: 18px; background: radial-gradient(120% 80% at 50% 0%, #2a3a5e, #0d1424 60%); }
-  #start h1 { margin: 0; font-size: 34px; }
-  #start h1 img { display: block; width: 140px; height: 140px; border-radius: 24px; }
-  #start ol { margin: 0; padding-left: 22px; color: #ddd; }
-  #start li { margin-bottom: 8px; }
-  #start small { color: var(--muted); }
-  #btnStart { min-height: 56px; border-radius: 14px; background: var(--accent); color: #000; font-weight: 700; font-size: 18px; }
+  .screen { position: fixed; inset: 0; display: flex; flex-direction: column; justify-content: center; padding: 28px; gap: 16px; overflow: auto;
+            background: radial-gradient(120% 80% at 50% 0%, #2a3a5e, #0d1424 60%); }
+  .screen h1 { margin: 0; font-size: 34px; }
+  .screen h1 img { display: block; width: 120px; height: 120px; border-radius: 22px; }
+  .screen h2 { margin: 0; font-size: 26px; }
+  .screen h3 { margin: 0 0 4px; font-size: 16px; }
+  .screen p { margin: 0; color: #ddd; }
+  .screen .lead { font-size: 21px; font-weight: 700; line-height: 1.3; color: #fff; }
+  .screen ul { margin: 8px 0 0; padding-left: 22px; color: #ddd; }
+  .screen li { margin-bottom: 6px; }
+  .screen small { color: var(--muted); }
+  #deniedSteps { display: flex; flex-direction: column; gap: 14px; }
+  #deniedSteps section { padding: 12px 14px; border-radius: 12px; background: rgba(255,255,255,.08); }
+  .screen .btn.plain { background: none; color: #fff; text-decoration: underline; }
+  .big { min-height: 56px; border-radius: 14px; background: var(--accent); color: #000; font-weight: 700; font-size: 18px; }
 
-  #toast { position: fixed; left: 50%; top: calc(max(10px, env(safe-area-inset-top)) + 50px); transform: translateX(-50%); width: max-content; max-width: calc(100% - 24px);
+  #toast { position: fixed; left: 50%; top: calc(max(10px, env(safe-area-inset-top)) + 56px); transform: translateX(-50%); width: max-content; max-width: calc(100% - 24px);
            padding: 10px 16px; border-radius: 12px; display: none; text-align: center; }
   #landscape { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; background: #111; font-size: 20px; padding: 24px; text-align: center; }
   @media (orientation: landscape) and (max-height: 500px) { #landscape { display: flex; } }
@@ -123,14 +141,15 @@
 <video id="cam" playsinline muted autoplay></video>
 <canvas id="overlay"></canvas>
 <div id="cross"></div>
+<div id="live" class="sr-only" aria-live="polite"></div>
 
 <div id="top">
-  <div id="status" class="glass" role="status">Esperando GPS…</div>
-  <button id="calBadge" class="warn" hidden>Sin calibrar</button>
+  <div id="status" class="glass" data-t="gpsWait">Esperando GPS…</div>
+  <button id="calBadge" class="warn" hidden data-t="uncal">Sin calibrar</button>
 </div>
-<div id="banner" class="glass" hidden><span id="bannerText"></span><button id="bannerBtn"></button><button id="bannerBtn2" class="plain" hidden></button></div>
+<div id="banner" class="glass" hidden><span id="bannerText" aria-live="polite"></span><button id="bannerBtn"></button><button id="bannerBtn2" class="plain" hidden></button></div>
 <div id="tapMark" hidden></div>
-<div id="guide" class="glass" hidden><span id="guideText"></span><button id="guideClose" aria-label="Dejar de buscar">✕</button></div>
+<div id="guide" class="glass" hidden><span id="guideText"></span><button id="guideClose" data-t-aria="stopFind" aria-label="Dejar de buscar">✕</button></div>
 <div id="toast" class="glass" role="alert"></div>
 
 <button id="focusCard" class="glass" hidden>
@@ -139,20 +158,20 @@
   <span class="chev" aria-hidden="true">›</span>
 </button>
 
-<button id="btnFreeze" class="glass" aria-label="Congelar imagen">⏸</button>
+<button id="btnFreeze" class="glass" data-t-aria="freeze" aria-label="Congelar imagen">⏸</button>
 <nav id="bar">
-  <button id="btnCal">Calibrar</button>
-  <button id="btnFind" class="glass">Buscar</button>
-  <button id="btnShot" class="glass">Foto</button>
-  <button id="btnSet" class="glass">Ajustes</button>
+  <button id="btnCal" data-t="calibrate">Calibrar</button>
+  <button id="btnFind" class="glass" data-t="find">Buscar</button>
+  <button id="btnShot" class="glass" data-t="shot">Foto</button>
+  <button id="btnSet" class="glass" data-t="settings">Ajustes</button>
 </nav>
 
 <div id="backdrop" hidden></div>
 
 <section id="infoPanel" class="sheet" role="dialog" aria-modal="true" aria-labelledby="infoName" hidden>
-  <button class="close" id="infoClose" aria-label="Cerrar">✕</button>
+  <button class="close" id="infoClose" data-t-aria="close" aria-label="Cerrar">✕</button>
   <div id="carousel"></div>
-  <div id="dots"></div>
+  <div id="dots" aria-hidden="true"></div>
   <div class="body">
     <h2 id="infoName"></h2>
     <div id="chips"></div>
@@ -165,94 +184,130 @@
 <section id="calPanel" class="sheet" role="dialog" aria-modal="true" aria-labelledby="calTitle" hidden>
   <div class="grip"></div>
   <div class="body">
-    <h2 id="calTitle">¿Cómo calibrar?</h2>
-    <p>Esto alinea los nombres con lo que ves. Toma un minuto.</p>
+    <h2 id="calTitle" data-t="calTitle">¿Cómo calibrar?</h2>
+    <p data-t="calIntro"></p>
     <button id="calWhere" class="btn"></button>
-    <label class="floor">¿En qué piso estás? <input id="calFloor" type="number" min="0" max="100" step="1" inputmode="numeric"></label>
+    <label class="floor"><span data-t="calFloorQ"></span> <input id="calFloor" type="number" min="0" max="100" step="1" inputmode="numeric"></label>
     <p id="calGps" class="warnTxt" hidden></p>
-    <button id="calGuided" class="btn opt">Con edificios <small>Recomendado</small><small class="d">Tocas la punta de dos torres. Es lo más preciso.</small></button>
-    <button id="calSky" class="btn opt">Con el horizonte<small class="d">Apuntas a los cerros o a una torre alta y el teléfono se alinea solo. Necesita un día despejado.</small></button>
-    <button id="calAny" class="btn opt">Tocar cualquier lugar<small class="d">Tocas algo que conozcas y eliges su nombre.</small></button>
-    <button id="calNone" class="btn opt">Solo GPS y brújula<small class="d">Borra la calibración. Úsalo si los nombres quedaron muy corridos.</small></button>
-    <button id="calClose" class="btn plain">Cerrar</button>
+    <button id="calGuided" class="btn opt main"><span data-t="calGuided"></span> <small data-t="recommended"></small><small class="d" data-t="calGuidedD"></small></button>
+    <button id="calSky" class="btn opt"><span data-t="calSky"></span><small class="d" data-t="calSkyD"></small></button>
+    <button id="calAny" class="btn opt"><span data-t="calAny"></span><small class="d" data-t="calAnyD"></small></button>
+    <button id="calNone" class="btn opt"><span data-t="calNone"></span><small class="d" data-t="calNoneD"></small></button>
+    <button id="calClose" class="btn plain" data-t="close"></button>
   </div>
 </section>
 
 <section id="spotPanel" class="sheet" role="dialog" aria-modal="true" aria-labelledby="spotTitle" hidden>
   <div class="grip"></div>
   <div class="body">
-    <h2 id="spotTitle">¿Dónde estás?</h2>
-    <p>Dentro de un edificio el GPS falla. Guarda tu lugar una vez y úsalo siempre.</p>
+    <h2 id="spotTitle" data-t="spotTitle"></h2>
+    <p data-t="spotIntro"></p>
     <ul id="spotList"></ul>
     <div id="spotNew" hidden>
-      <p>Toca el mapa justo donde estás.</p>
-      <canvas id="spotMap"></canvas>
-      <p class="mapNote">Mapa © colaboradores de OpenStreetMap</p>
-      <label>Nombre <input id="spotName" type="text" maxlength="30" placeholder="Ej. Azotea, Depa"></label>
-      <label>Piso <input id="spotFloor" type="number" min="0" max="100" step="1" inputmode="numeric"></label>
-      <button id="spotSave" class="btn main">Guardar y usar</button>
+      <p data-t="spotTap"></p>
+      <div class="map">
+        <canvas id="spotMap"></canvas>
+        <div class="zoom"><button id="spotZoomIn" data-t-aria="zoomIn">+</button><button id="spotZoomOut" data-t-aria="zoomOut">−</button></div>
+      </div>
+      <p class="mapNote" data-t="mapCredit"></p>
+      <label><span data-t="spotName"></span> <input id="spotName" type="text" maxlength="30" data-t-ph="spotNamePh"></label>
+      <label><span data-t="spotFloor"></span> <input id="spotFloor" type="number" min="0" max="100" step="1" inputmode="numeric"></label>
+      <button id="spotSave" class="btn main" data-t="spotSave"></button>
     </div>
-    <button id="spotAdd" class="btn">+ Guardar un lugar nuevo</button>
-    <button id="spotClose" class="btn plain">Cerrar</button>
+    <button id="spotAdd" class="btn" data-t="spotAdd"></button>
+    <button id="spotClose" class="btn plain" data-t="close"></button>
   </div>
 </section>
 
 <section id="findPanel" class="sheet" role="dialog" aria-modal="true" aria-labelledby="findTitle" hidden>
   <div class="grip"></div>
   <div class="body">
-    <h2 id="findTitle">¿Dónde está…?</h2>
-    <p>Elige un lugar y una flecha te dirá hacia dónde girar.</p>
-    <div id="findList"></div>
-    <button id="findClose" class="btn plain">Cerrar</button>
+    <h2 id="findTitle" data-t="findTitle"></h2>
+    <div class="tabs" role="tablist">
+      <button id="tabList" role="tab" aria-selected="true" aria-controls="findList" data-t="tabList"></button>
+      <button id="tabMap" role="tab" aria-selected="false" aria-controls="findMapBox" data-t="tabMap"></button>
+    </div>
+    <p id="findIntro" data-t="findIntro"></p>
+    <div id="findNoPos" hidden><p class="warnTxt" data-t="noPos"></p><button id="findPick" class="btn main" data-t="gpsPick"></button></div>
+    <div id="findList" role="tabpanel" aria-labelledby="tabList"></div>
+    <div id="findMapBox" role="tabpanel" aria-labelledby="tabMap" hidden>
+      <p class="mapNote" data-t="mapHint"></p>
+      <div class="map">
+        <canvas id="findMap"></canvas>
+        <div class="zoom"><button id="zoomIn" data-t-aria="zoomIn">+</button><button id="zoomOut" data-t-aria="zoomOut">−</button></div>
+      </div>
+      <p class="mapNote" data-t="mapCredit"></p>
+    </div>
+    <button id="findClose" class="btn plain" data-t="close"></button>
   </div>
 </section>
 
 <section id="pickPanel" class="sheet" role="dialog" aria-modal="true" aria-labelledby="pickTitle" hidden>
   <div class="grip"></div>
   <div class="body">
-    <h2 id="pickTitle">¿Qué tocaste?</h2>
-    <p>Elige el lugar que está bajo el círculo amarillo.</p>
+    <h2 id="pickTitle" data-t="pickTitle"></h2>
+    <p data-t="pickIntro"></p>
     <ul id="pickList"></ul>
-    <button id="pickCancel" class="btn plain">Cancelar</button>
+    <button id="pickCancel" class="btn plain" data-t="cancel"></button>
   </div>
 </section>
 
 <section id="setPanel" class="sheet" role="dialog" aria-modal="true" aria-labelledby="setTitle" hidden>
   <div class="grip"></div>
   <div class="body">
-    <h2 id="setTitle">Ajustes</h2>
-    <label>Piso en el que estás
+    <h2 id="setTitle" data-t="settings"></h2>
+    <label><span data-t="language"></span>
+      <select id="inLang"></select>
+    </label>
+    <label><span data-t="setFloor"></span>
       <input id="inFloor" type="number" min="0" max="100" step="1" inputmode="numeric">
     </label>
-    <label>Altura del suelo (m sobre el nivel del mar). Se llena sola con el GPS.
+    <label><span data-t="setGround"></span>
       <input id="inGround" type="number" min="0" max="5000" step="1" inputmode="numeric">
     </label>
-    <label>Campo de visión: <b id="fovOut"></b>°. Se ajusta solo al calibrar con dos lugares.
+    <label><span id="fovOut"></span>
       <input id="inFov" type="range" min="30" max="110" step="1">
     </label>
-    <button id="setWhere" class="btn">Mis lugares guardados</button>
-    <button id="calReset" class="btn plain">Borrar calibración</button>
-    <button id="setClose" class="btn main">Listo</button>
+    <button id="setWhere" class="btn" data-t="mySpots"></button>
+    <button id="calReset" class="btn plain" data-t="clearCal"></button>
+    <button id="setClose" class="btn main" data-t="done"></button>
   </div>
 </section>
 
-<div id="start">
+<div id="start" class="screen">
   <h1><img src="icon-512.png" alt="Visor GDL" width="140" height="140"></h1>
-  <ol>
-    <li>Permite cámara y ubicación.</li>
-    <li>Elige cómo calibrar y sigue los pasos en pantalla.</li>
-    <li>Pon el círculo sobre algo, o toca un nombre, para ver fotos y detalles.</li>
-  </ol>
-  <small>Quita fundas con imán y usa el teléfono en vertical. Funciona en Android (Chrome) y iPhone (Safari).</small>
-  <button id="btnStart">Iniciar</button>
+  <p class="lead" data-t="tagline"></p>
+  <div>
+    <p data-t="whyTitle"></p>
+    <ul>
+      <li data-t="whyCam"></li>
+      <li data-t="whyLoc"></li>
+      <li id="whyMotion" data-t="whyMotion" hidden></li>
+    </ul>
+  </div>
+  <small data-t="startTip"></small>
+  <button id="btnStart" class="big" data-t="start"></button>
+  <button id="btnNoCam" class="btn plain" data-t="startNoCam"></button>
 </div>
 
-<div id="landscape">Gira el teléfono a vertical.</div>
+<div id="denied" class="screen" role="alertdialog" aria-labelledby="deniedTitle" hidden>
+  <h2 id="deniedTitle" data-t="deniedTitle"></h2>
+  <p id="deniedWhat"></p>
+  <div id="deniedSteps">
+    <section data-os="android"><h3 data-t="deniedAndroid"></h3><p data-t="deniedAndroidSteps"></p></section>
+    <section data-os="ios"><h3 data-t="deniedIos"></h3><p data-t="deniedIosSteps"></p></section>
+  </div>
+  <button id="deniedRetry" class="big" data-t="deniedRetry"></button>
+  <button id="deniedAlt" class="btn plain"></button>
+</div>
+
+<div id="landscape" data-t="landscape"></div>
 
 <script type="module">
-import { distBearing, elevAngle, dirVector, cameraBasis, headingPitch, project, smoothBasis, rayMax, tiltBasis, solveCalibration, skyEdges, matchSkyline, withTowers } from "./geo.js";
+import { angleSpread, distBearing, elevAngle, dirVector, cameraBasis, headingPitch, project, smoothBasis, rayMax, tiltBasis, solveCalibration, skyEdges, matchSkyline, withTowers } from "./geo.js";
 import { loadArea, elevation } from "./terrain.js";
 import { LANDMARKS, PERFILES } from "./landmarks.js";
+import { t, initLang, setLang, applyLang, getLang, LANGS } from "./i18n.js";
 
 const FLOOR_HEIGHT = 3.2;   // m por piso
 const EYE_HEIGHT = 1.6;     // m sobre la azotea
@@ -298,22 +353,46 @@ let lastSensor = 0;
 
 function onAbsolute(e) {
   if (e.alpha == null) return;
+  if (!absBasis) announce(t("compassReady"));
   lastSensor = performance.now();
   absBasis = smoothBasis(absBasis, cameraBasis(e.alpha, e.beta, e.gamma), 0.15);
+  // Muestra para medir si la brújula está estable: su rumbo menos el del giroscopio
+  // (si giras el teléfono los dos cambian igual; si hay un imán, solo la brújula salta).
+  const raw = headingPitch(cameraBasis(e.alpha, e.beta, e.gamma));
+  if (Math.abs(raw.pitch) < 60) compassSamples.push({ t: lastSensor, h: raw.heading - (relRaw ?? 0), gyro: relRaw != null });
 }
 function onRelative(e) {
   if (e.alpha == null) return;
   if (e.absolute) return onAbsolute(e); // teléfonos sin giroscopio
   lastSensor = performance.now();
+  relRaw = headingPitch(cameraBasis(e.alpha, e.beta, e.gamma)).heading;
   // iPhone: no hay evento absoluto; la brújula llega aparte como webkitCompassHeading
   // (rumbo de la cámara, magnético). Se gira alpha para que el rumbo coincida con ella.
   // ponytail: sin probar en un iPhone real; si el rumbo sale volteado, revisar el signo.
+  if (e.webkitCompassAccuracy != null) compassAcc = e.webkitCompassAccuracy;
   if (e.webkitCompassHeading != null && e.webkitCompassAccuracy >= 0) {
     const h = headingPitch(cameraBasis(e.alpha, e.beta, e.gamma)).heading;
     onAbsolute({ alpha: e.alpha + h - e.webkitCompassHeading, beta: e.beta, gamma: e.gamma });
   }
   relBasis = smoothBasis(relBasis, cameraBasis(e.alpha, e.beta, e.gamma), 0.3);
 }
+// Brújula inestable: aviso que no bloquea, como mucho una vez por minuto.
+// iPhone da su precisión en grados (webkitCompassAccuracy; -1 = sin calibrar). En los demás se mide
+// cuánto salta el rumbo en los últimos 2 s: contra el giroscopio si hay, si no el rumbo solo.
+let compassSamples = [], compassAcc = null, relRaw = null, compassBadFor = 0, compassWarned = -Infinity;
+setInterval(() => {
+  const now = performance.now();
+  compassSamples = compassSamples.filter((s) => now - s.t < 2000);
+  const gyro = compassSamples.every((s) => s.gyro);
+  const spread = compassSamples.length >= 10 ? angleSpread(compassSamples.map((s) => s.h)) : 0;
+  const bad = (compassAcc != null && (compassAcc < 0 || compassAcc > 30)) || spread > (gyro ? 5 : 15);
+  compassBadFor = bad ? compassBadFor + 1 : 0;
+  // Ya calibrado con el giroscopio, la brújula no se usa: no hace falta avisar.
+  if (compassBadFor >= 3 && gyroCorr == null && !frozen && $("start").hidden && $("backdrop").hidden && now - compassWarned > 60000) {
+    compassWarned = now; toast(t("compassBad"));
+  }
+}, 1000);
+
 // Congelar: la imagen y la orientación se quedan quietas para tocar nombres con calma.
 let frozen = null; // { kind: "rel" | "abs" } mientras está congelado
 const usingGyro = () => (frozen ? frozen.kind === "rel" : basis != null && basis === relBasis);
@@ -387,7 +466,7 @@ async function loadRelief(lat, lon) {
   await Promise.all([loadArea(lat, lon, 200, 12), loadArea(lat, lon, 40000, 10), loadArea(lat, lon, 80000, 9), loadArea(lat, lon, FAR_M, 8)]);
   const g = elevation(lat, lon, 12);
   if (store.get("groundManual", null) == null && Number.isFinite(g)) { cfg.ground = Math.round(g); $("inGround").value = cfg.ground; }
-  if (!Number.isFinite(g)) toast("No se pudo cargar el mapa del terreno. Revisa tus datos móviles.");
+  if (!Number.isFinite(g)) toast(t("reliefFail"));
   reliefReady = true;
   recompute();
 }
@@ -398,18 +477,23 @@ let spots = store.get("spots", []);       // [{ nombre, lat, lon, floor }] solo 
 let spotName = store.get("spot", null);   // lugar en uso, o null = GPS
 const activeSpot = () => spots.find((x) => x.nombre === spotName) || null;
 function onPosition(p) {
+  if (!gps) announce(t("gpsReady", { acc: Math.round(p.coords.accuracy) }));
   gps = { lat: p.coords.latitude, lon: p.coords.longitude, acc: p.coords.accuracy };
+  store.set("lastPos", { lat: gps.lat, lon: gps.lon }); // centro del mapa si otro día no hay GPS
   applyPos();
 }
 function applyPos() {
   const sp = activeSpot();
   const src = sp ? { lat: sp.lat, lon: sp.lon, acc: 0, spot: sp.nombre } : gps;
   if (!src) return;
+  const first = !pos;
   pos = src;
+  if (gpsHelp) { gpsHelp = false; $("banner").hidden = true; }
   const moved = reliefFor ? distBearing(reliefFor.lat, reliefFor.lon, pos.lat, pos.lon).dist : Infinity;
   if (moved > 300) loadRelief(pos.lat, pos.lon);
   // El horizonte cuesta ~0.2 s; solo se recalcula si te moviste más de 30 m.
   if (!calcFor || distBearing(calcFor.lat, calcFor.lon, pos.lat, pos.lon).dist > 30) { calcFor = pos; recompute(); }
+  if (first && !$("findPanel").hidden) openFind(); // la lista esperaba la posición
 }
 
 // --- Cámara y proyección ---
@@ -430,11 +514,12 @@ function focalK() {
 const focal = () => focalK() / Math.tan(cfg.fov / 2 / DEG);
 const fovFromF = (f) => 2 * Math.atan(focalK() / f) * DEG;
 
-const CARD = ["N", "NE", "E", "SE", "S", "SO", "O", "NO"];
-const card = (az) => CARD[Math.round((((az % 360) + 360) % 360) / 45) % 8];
-const fmtDist = (m) => m < 10000 ? (m / 1000).toFixed(1) + " km" : Math.round(m / 1000).toLocaleString("es-MX") + " km";
+const card = (az) => t("dirs")[Math.round((((az % 360) + 360) % 360) / 45) % 8];
+const locale = () => (getLang() === "es" ? "es-MX" : "en-US");
+const fmtDist = (m) => m < 10000 ? (m / 1000).toFixed(1) + " km" : Math.round(m / 1000).toLocaleString(locale()) + " km";
+const distDir = (l) => t("distDir", { dist: fmtDist(l.dist), dir: card(l.bearing) });
 const COLOR = { m: "#9be7a1", e: "#ffd54a", z: "#8fd3ff" };
-const TIPO = { m: "Montaña", e: "Edificio", z: "Zona" };
+const TIPO = { m: "tipoM", e: "tipoE", z: "tipoZ" };
 
 // --- Dibujo ---
 let view = null; // { b, f, cx, cy } del último cuadro
@@ -504,15 +589,15 @@ function draw() {
   hits = [];
   pickView();
   if (!basis) {
-    if (lastSensor === 0 && performance.now() > 3000) $("status").textContent = "Sin brújula. En iPhone: recarga la página y permite el acceso al movimiento.";
+    if (lastSensor === 0 && performance.now() > 3000 && $("status").textContent !== t("noCompass")) { $("status").textContent = t("noCompass"); announce(t("noCompass")); }
     return;
   }
   const { heading } = headingPitch(basis);
   const trueHeading = (heading + corr + 360) % 360;
-  $("status").textContent = !pos ? "Esperando GPS…"
-    : `${Math.round(trueHeading)}° ${card(trueHeading)} · ${pos.spot ? `📍 ${pos.spot} · piso ${cfg.floor}` : `${Math.round(viewerAlt())} m · ±${Math.round(pos.acc)} m`}` + (reliefReady ? "" : " · cargando relieve…");
+  $("status").textContent = !pos ? t("gpsWait")
+    : `${Math.round(trueHeading)}° ${card(trueHeading)} · ${pos.spot ? `📍 ${pos.spot} · ${t("floorN", { n: cfg.floor })}` : `${Math.round(viewerAlt())} m · ±${Math.round(pos.acc)} m`}` + (reliefReady ? "" : " · " + t("loadingRelief"));
   $("calBadge").hidden = false;
-  $("calBadge").textContent = calibrated ? "Calibrado" : "Sin calibrar";
+  $("calBadge").textContent = t(calibrated ? "cal" : "uncal");
   $("calBadge").className = calibrated ? "ok" : "warn";
   if (!pos) return;
 
@@ -550,7 +635,7 @@ function draw() {
   const placed = [], labels = [];
   for (const s of shown) {
     const l = s.l, isFocus = focus && l.nombre === focus.nombre;
-    const name = (l.onHorizon ? "→ " : "") + l.nombre, dist = fmtDist(l.dist) + (l.hidden ? " · oculto" : "");
+    const name = (l.onHorizon ? "→ " : "") + l.nombre, dist = fmtDist(l.dist) + (l.hidden ? " · " + t("hiddenShort") : "");
     ctx.font = "600 15px system-ui, sans-serif";
     const wName = ctx.measureText(name).width;
     ctx.font = "400 13px system-ui, sans-serif";
@@ -595,7 +680,7 @@ function setFocus(l) {
   $("focusCard").hidden = !l || busy;
   if (!l) return;
   $("focusName").textContent = l.nombre;
-  $("focusMeta").textContent = `${fmtDist(l.dist)} al ${card(l.bearing)} · Ver fotos y detalles`;
+  $("focusMeta").textContent = `${distDir(l)} · ${t("seeDetails")}`;
   const img = INFO[l.nombre]?.fotos?.[0]?.src;
   img ? $("focusImg").setAttribute("src", img) : $("focusImg").removeAttribute("src");
 }
@@ -616,36 +701,39 @@ $("backdrop").onclick = () => { if (!$("pickPanel").hidden) cancelPick(); else c
 addEventListener("keydown", (e) => e.key === "Escape" && closeSheets());
 
 // --- Detalles ---
-function openInfo(l) {
+function openInfo(l, back = false) {
+  infoBack = back;
   const d = INFO[l.nombre];
   $("infoName").textContent = l.nombre;
-  const chips = [TIPO[l.tipo], fmtDist(l.dist) + " al " + card(l.bearing)];
-  if (l.tipo !== "z") chips.push(Math.round(l.alt).toLocaleString("es-MX") + " msnm");
-  if (l.hidden) chips.push("Oculto por el relieve");
-  if (l.onHorizon) chips.push("No se ve desde aquí; la flecha marca la dirección");
+  const chips = [t(TIPO[l.tipo]), distDir(l)];
+  if (l.tipo !== "z") chips.push(t("masl", { n: Math.round(l.alt).toLocaleString(locale()) }));
+  if (l.hidden) chips.push(t("hiddenByRelief"));
+  if (l.onHorizon) chips.push(t("notVisible"));
   $("chips").replaceChildren(...chips.map((t) => Object.assign(document.createElement("span"), { textContent: t })));
 
   const fotos = d?.fotos || [];
   $("carousel").replaceChildren(...fotos.map((f, i) => {
     const a = Object.assign(document.createElement("a"), { href: f.fuente, target: "_blank", rel: "noopener" });
-    a.append(Object.assign(document.createElement("img"), { src: f.src, alt: `${l.nombre}, foto ${i + 1}`, loading: i ? "lazy" : "eager" }));
+    a.append(Object.assign(document.createElement("img"), { src: f.src, alt: t("photoN", { name: l.nombre, n: i + 1 }), loading: i ? "lazy" : "eager" }));
     return a;
   }));
   $("dots").replaceChildren(...(fotos.length > 1 ? fotos.map((_, i) => Object.assign(document.createElement("i"), { className: i ? "" : "on" })) : []));
   $("carousel").scrollLeft = 0;
 
-  $("infoText").textContent = d?.texto || "Sin descripción todavía.";
+  // En inglés: el artículo de Wikipedia en inglés si existe; si no, el de español.
+  const en = getLang() === "en" && d?.url_en;
+  $("infoText").textContent = (en ? d.texto_en : d?.texto) || t("noDesc");
   const link = Object.assign(document.createElement("a"), { target: "_blank", rel: "noopener" });
-  link.href = d?.url || `https://es.m.wikipedia.org/w/index.php?search=${encodeURIComponent(l.nombre + " Jalisco")}`;
-  link.textContent = d?.url ? "Leer más en Wikipedia" : "Buscar en Wikipedia";
+  link.href = (en ? d.url_en : d?.url) || `https://${getLang()}.m.wikipedia.org/w/index.php?search=${encodeURIComponent(l.nombre + " Jalisco")}`;
+  link.textContent = t(d?.url ? "readMore" : "searchWiki");
   $("infoLink").replaceChildren(link);
   $("credits").replaceChildren(...fotos.map((f, i) => {
     const li = document.createElement("li");
-    li.append(`Foto ${i + 1}: ${f.autor}${f.licencia ? ", " + f.licencia : ""} · `,
+    li.append(`${t("photoCredit", { n: i + 1, autor: f.autor })}${f.licencia ? ", " + f.licencia : ""} · `,
       Object.assign(document.createElement("a"), { href: f.fuente, target: "_blank", rel: "noopener", textContent: "Wikimedia Commons" }));
     return li;
   }));
-  if (d) $("credits").append(Object.assign(document.createElement("li"), { textContent: "Texto: Wikipedia, CC BY-SA 4.0." }));
+  if (d) $("credits").append(Object.assign(document.createElement("li"), { textContent: t("textCredit") }));
   openSheet("infoPanel");
   $("infoClose").focus();
 }
@@ -653,7 +741,7 @@ $("carousel").addEventListener("scroll", (e) => {
   const i = Math.round(e.target.scrollLeft / e.target.clientWidth);
   [...$("dots").children].forEach((d, k) => (d.className = k === i ? "on" : ""));
 });
-$("infoClose").onclick = closeSheets;
+$("infoClose").onclick = () => (infoBack ? openFind() : closeSheets());
 
 // --- Buscar: flecha hacia un lugar elegido ---
 let target = null, guideMsg = "";
@@ -663,8 +751,8 @@ function drawTarget(W, H, heading) {
   const l = items.find((i) => i.nombre === target);
   if (!l) return;
   const turn = wrap(l.bearing - heading);
-  const msg = Math.abs(turn) < 4 ? `${l.nombre}: al frente, ${fmtDist(l.dist)}`
-    : `${l.nombre}: gira ${Math.round(Math.abs(turn))}° a la ${turn > 0 ? "derecha" : "izquierda"}`;
+  const msg = Math.abs(turn) < 4 ? t("ahead", { name: l.nombre, dist: fmtDist(l.dist) })
+    : t(turn > 0 ? "turnR" : "turnL", { name: l.nombre, deg: Math.round(Math.abs(turn)) });
   if (msg !== guideMsg) $("guideText").textContent = guideMsg = msg;
 
   const top = 110, bottom = H - 170;
@@ -690,21 +778,40 @@ function drawTarget(W, H, heading) {
   ctx.restore();
 }
 
-function openFind() {
-  if (!items.length) { toast("Espera unos segundos, todavía está cargando."); return; }
-  const groups = [["m", "Montañas"], ["e", "Edificios"], ["z", "Zonas y ciudades"]];
+// Lista y mapa de lugares, ordenados por distancia. Sirve también sin cámara o bajo techo.
+let findTab = "list", infoBack = false;
+function openFind(tab = findTab) {
+  findTab = tab;
+  const noPos = !items.length;
+  $("findIntro").hidden = tab !== "list";
+  $("findNoPos").hidden = !noPos;
+  for (const [id, box, on] of [["tabList", "findList", tab === "list"], ["tabMap", "findMapBox", tab === "map"]]) {
+    $(id).setAttribute("aria-selected", on); $(box).hidden = !on || noPos;
+  }
+  const groups = [["m", "groupM"], ["e", "groupE"], ["z", "groupZ"]];
   $("findList").replaceChildren(...groups.flatMap(([tipo, title]) => [
-    Object.assign(document.createElement("div"), { className: "group", textContent: title }),
+    Object.assign(document.createElement("div"), { className: "group", textContent: t(title) }),
     ...items.filter((l) => l.tipo === tipo).sort((a, b) => a.dist - b.dist).map((l) => {
+      const row = Object.assign(document.createElement("div"), { className: "row" });
       const btn = Object.assign(document.createElement("button"), { className: "btn" });
-      btn.append(l.nombre, Object.assign(document.createElement("small"), { textContent: `${fmtDist(l.dist)} al ${card(l.bearing)}` }));
-      btn.onclick = () => { target = l.nombre; guideMsg = ""; $("guide").hidden = false; closeSheets(); };
-      return btn;
+      btn.append(l.nombre, Object.assign(document.createElement("small"), { textContent: distDir(l) }));
+      btn.onclick = () => openInfo(l, true);
+      row.append(btn);
+      if (basis) { // la flecha necesita brújula
+        const go = Object.assign(document.createElement("button"), { className: "btn del", textContent: "➜", ariaLabel: t("pointTo", { name: l.nombre }) });
+        go.onclick = () => { target = l.nombre; guideMsg = ""; $("guide").hidden = false; closeSheets(); };
+        row.append(go);
+      }
+      return row;
     }),
   ]));
   openSheet("findPanel");
+  if (tab === "map" && !noPos) { findMap.c ??= { lat: pos.lat, lon: pos.lon }; findMap.draw(); }
 }
-$("btnFind").onclick = openFind;
+$("btnFind").onclick = () => openFind();
+$("tabList").onclick = () => openFind("list");
+$("tabMap").onclick = () => { if (pos) findMap.c = { lat: pos.lat, lon: pos.lon }; openFind("map"); };
+$("findPick").onclick = () => pickOnMap();
 $("findClose").onclick = closeSheets;
 $("guideClose").onclick = () => { target = null; $("guide").hidden = true; };
 
@@ -721,7 +828,7 @@ async function shareShot() {
   x.scale(dpr, dpr);
   x.fillStyle = "rgba(0,0,0,.6)"; x.fillRect(0, H - 34, W, 34);
   x.fillStyle = "#fff"; x.font = "600 14px system-ui, sans-serif"; x.textBaseline = "middle";
-  x.fillText(`Visor GDL · ${$("status").textContent.split(" · ")[0]} · ${new Date().toLocaleDateString("es-MX")}`, 12, H - 17);
+  x.fillText(`Visor GDL · ${$("status").textContent.split(" · ")[0]} · ${new Date().toLocaleDateString(locale())}`, 12, H - 17);
   const blob = await new Promise((r) => c.toBlob(r, "image/jpeg", 0.9));
   const file = new File([blob], `visor-gdl-${Date.now()}.jpg`, { type: "image/jpeg" });
   try {
@@ -729,18 +836,18 @@ async function shareShot() {
   } catch (e) { if (e.name === "AbortError") return; }
   const a = Object.assign(document.createElement("a"), { href: URL.createObjectURL(blob), download: file.name });
   a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 5000);
-  toast("Foto guardada en Descargas.");
+  toast(t("shotSaved"));
 }
-$("btnShot").onclick = () => shareShot().catch(() => toast("No se pudo crear la foto."));
+$("btnShot").onclick = () => shareShot().catch(() => toast(t("shotFail")));
 
 // --- Calibración: toca en pantalla un lugar conocido y di cuál es ---
 let calMode = false, calPoints = [], pending = null;
 
 function startCal() {
-  if (!pos || !basis) { toast("Espera unos segundos, todavía está cargando."); return; }
+  if (!pos || !basis) { toast(t("loading")); return; }
   autoMode = false; calMode = true; calPoints = [];
   $("focusCard").hidden = true; $("guide").hidden = true;
-  banner("Toca en la imagen un lugar que reconozcas.");
+  banner(t("tapKnown"));
 }
 function endCal() {
   if (guided != null) target = null;
@@ -748,7 +855,7 @@ function endCal() {
   $("banner").hidden = true; $("tapMark").hidden = true; $("guide").hidden = !target; focus = null;
 }
 // Aviso arriba con uno o dos botones: banner(texto, [etiqueta, acción], [etiqueta, acción]?)
-function banner(text, [l1, f1] = ["Cancelar", endCal], second) {
+function banner(text, [l1, f1] = [t("cancel"), endCal], second) {
   $("bannerText").textContent = text;
   Object.assign($("bannerBtn"), { textContent: l1, onclick: f1 });
   $("bannerBtn2").hidden = !second;
@@ -759,11 +866,11 @@ function banner(text, [l1, f1] = ["Cancelar", endCal], second) {
 function openCalMenu() {
   endCal();
   $("calFloor").value = cfg.floor;
-  $("calWhere").textContent = "Ubicación: " + (pos?.spot ? `📍 ${pos.spot}` : gps ? `GPS ±${Math.round(gps.acc)} m` : "esperando GPS") + " · Cambiar";
+  $("calWhere").textContent = t("calWhere", { where: pos?.spot ? `📍 ${pos.spot}` : gps ? t("gpsAcc", { acc: Math.round(gps.acc) }) : t("waitingGps") });
   // Dentro de un depa el GPS suele fallar por decenas de metros: los edificios cercanos salen corridos.
   const bad = pos && !pos.spot && pos.acc > 25;
   $("calGps").hidden = !bad;
-  if (bad) $("calGps").textContent = `Tu ubicación es imprecisa (±${Math.round(pos.acc)} m). Guarda tu lugar en el mapa con el botón de arriba.`;
+  if (bad) $("calGps").textContent = t("gpsBad", { acc: Math.round(pos.acc) });
   openSheet("calPanel");
 }
 $("calFloor").onchange = (e) => setFloor(e.target.value);
@@ -774,7 +881,7 @@ $("calGuided").onclick = () => { closeSheets(); startGuided(); };
 $("calSky").onclick = () => { closeSheets(); startAuto(); };
 $("calAny").onclick = () => { closeSheets(); startCal(); };
 // Solo brújula: se olvida la calibración del giroscopio; el rumbo vuelve a seguir a la brújula.
-$("calNone").onclick = () => { closeSheets(); resetCal(); toast("Calibración borrada. Usando solo GPS y brújula."); };
+$("calNone").onclick = () => { closeSheets(); resetCal(); toast(t("calCleared")); };
 
 // --- Calibración guiada: tocar la punta real del Hotel Riu y luego la del Fiesta Americana ---
 // El primero fija rumbo e inclinación; el segundo los afina y, si lo tocas lejos del centro, también el zoom.
@@ -784,7 +891,7 @@ let guided = null; // índice en GUIA del lugar que toca ahora
 function startGuided() {
   const ok = GUIA.every((n) => { const l = items.find((i) => i.nombre === n); return l && !l.hidden && l.dist < 15000; });
   if (!ok) return startAuto(); // lejos de la azotea (o no se ven): usa el horizonte
-  if (!basis) { toast("Espera unos segundos, todavía está cargando."); return; }
+  if (!basis) { toast(t("loading")); return; }
   endCal();
   calMode = true; calPoints = []; guided = 0;
   $("focusCard").hidden = true;
@@ -792,9 +899,8 @@ function startGuided() {
 }
 function guideStep() {
   target = GUIA[guided]; guideMsg = ""; $("guide").hidden = false;
-  banner(guided === 0 ? "Paso 1 de 2: sigue la flecha hasta el Hotel Riu y toca su punta en la imagen."
-    : "Paso 2 de 2: gira hasta el Fiesta Americana. Ponlo cerca de la orilla de la pantalla y toca su punta.",
-    ["Omitir", skipAuto], guided === 0 ? ["Usar horizonte", startAuto] : ["Terminar", endCal]);
+  banner(t(guided === 0 ? "step1" : "step2"),
+    [t("skip"), skipAuto], guided === 0 ? [t("useSky"), startAuto] : [t("finish"), endCal]);
 }
 
 // --- Calibración automática ---
@@ -806,13 +912,13 @@ const grab = document.createElement("canvas"), gctx = grab.getContext("2d", { wi
 
 function startAuto() {
   if (!video.videoWidth) return startCal(); // sin cámara: solo a mano
-  if (!pos || !basis || !skyline) { toast("Espera unos segundos, todavía está cargando."); return; }
+  if (!pos || !basis || !skyline) { toast(t("loading")); return; }
   endCal();
   autoMode = true; autoFails = 0; autoLast = performance.now();
   $("focusCard").hidden = true; $("guide").hidden = true;
-  banner("Apunta a los cerros o a una torre alta con cielo detrás. No muevas el teléfono.", ["Omitir", skipAuto]);
+  banner(t("skyAim"), [t("skip"), skipAuto]);
 }
-function skipAuto() { endCal(); toast("Sin calibrar: los nombres pueden salir corridos."); }
+function skipAuto() { endCal(); toast(t("skipped")); }
 
 // Llamada en cada cuadro mientras autoMode, después de fijar view.
 function autoStep() {
@@ -823,9 +929,7 @@ function autoStep() {
   const m = tryAuto();
   if (m.ok) return applyAuto(m);
   if (++autoFails === 6) {
-    const why = m.reason === "plano" ? "Apunta hacia donde se vean cerros con picos."
-      : "No veo dónde empieza el cielo. Apunta a otro lado o toca un lugar.";
-    banner(why, ["Tocar un lugar", startCal], ["Omitir", skipAuto]);
+    banner(t(m.reason === "plano" ? "flat" : "noEdge"), [t("tapPlace"), startCal], [t("skip"), skipAuto]);
   }
 }
 
@@ -868,8 +972,7 @@ function applyAuto(m) {
   cfg.pitch = pitch; store.set("pitch", pitch);
   calibrated = true; autoMode = false;
   autoDots = m.pts.map((p) => ({ az: p.az + m.dh, el: p.el + m.dp }));
-  banner("¿La línea blanca va sobre los cerros?",
-    ["Sí", () => { endCal(); toast("Calibrado. Si algo se corre, toca Calibrar."); }], ["No", startCal]);
+  banner(t("skyConfirm"), [t("yes"), () => { endCal(); toast(t("calDoneShift")); }], [t("no"), startCal]);
 }
 
 function calTap(x, y) {
@@ -892,8 +995,8 @@ function calTap(x, y) {
     li.append(btn);
     return li;
   };
-  const more = Object.assign(document.createElement("button"), { className: "btn plain", textContent: "Otro lugar…" });
-  more.onclick = () => $("pickList").replaceChildren(...near.map(({ l }) => l).sort((a, b) => a.nombre.localeCompare(b.nombre, "es")).map(item));
+  const more = Object.assign(document.createElement("button"), { className: "btn plain", textContent: t("otherPlace") });
+  more.onclick = () => $("pickList").replaceChildren(...near.map(({ l }) => l).sort((a, b) => a.nombre.localeCompare(b.nombre, getLang())).map(item));
   const li = document.createElement("li"); li.append(more);
   $("pickList").replaceChildren(...near.slice(0, 6).map(({ l }) => item(l)), li);
   openSheet("pickPanel");
@@ -920,7 +1023,7 @@ function calPick(l) {
   const s = solveCalibration(pts, { corr, pitch: cfg.pitch, f: focal() }, fitF);
   const fov = fitF ? fovFromF(s.f) : cfg.fov;
   if (!Number.isFinite(s.corr) || Math.abs(s.pitch) > 10 || fov < 30 || fov > 110) {
-    toast("Ese toque no coincide. Intenta otra vez.");
+    toast(t("tapMismatch"));
     calPoints = []; pending = null;
     return;
   }
@@ -934,9 +1037,9 @@ function calPick(l) {
   calibrated = true;
   calPoints = pts; pending = null;
   if (guided === 0) { guided = 1; guideStep(); return; }
-  if (guided === 1) { endCal(); toast(fitF ? "Calibración completa." : "Listo. Para más precisión, toca otro lugar cerca de la orilla de la pantalla."); return; }
-  if (fitF) { endCal(); toast("Calibración completa. Si se mueve con el tiempo, vuelve a calibrar."); }
-  else banner(`Listo con ${l.nombre}. Para más precisión, toca otro lugar cerca de la orilla de la pantalla.`, ["Terminar", endCal]);
+  if (guided === 1) { endCal(); toast(t(fitF ? "calDone" : "calOneMore")); return; }
+  if (fitF) { endCal(); toast(t("calDoneDrift")); }
+  else banner(t("calWith", { name: l.nombre }), [t("finish"), endCal]);
 }
 
 // Arrastrar la vista: los nombres siguen al dedo. Lado a lado corrige el rumbo, arriba/abajo la inclinación.
@@ -973,6 +1076,9 @@ cv.addEventListener("click", (e) => {
   if (h) openInfo(h.l);
 });
 
+// Lectores de pantalla: cambios de estado (GPS, brújula) sin leer el rumbo en cada cuadro.
+const announce = (msg) => { $("live").textContent = ""; setTimeout(() => ($("live").textContent = msg), 50); };
+
 let toastTimer;
 function toast(msg) {
   const t = $("toast"); t.textContent = msg; t.style.display = "block";
@@ -982,10 +1088,11 @@ function toast(msg) {
 // --- Congelar ---
 $("btnFreeze").onclick = () => {
   if (frozen) { frozen = null; video.play().catch(() => {}); }
-  else if (basis) { frozen = { kind: usingGyro() ? "rel" : "abs" }; video.pause(); toast("Imagen congelada. Toca los nombres o arrastra para alinear."); }
+  else if (basis) { frozen = { kind: usingGyro() ? "rel" : "abs" }; video.pause(); toast(t("frozen")); }
   $("btnFreeze").classList.toggle("on", !!frozen);
   $("btnFreeze").textContent = frozen ? "▶" : "⏸";
-  $("btnFreeze").setAttribute("aria-label", frozen ? "Seguir" : "Congelar imagen");
+  $("btnFreeze").dataset.tAria = frozen ? "unfreeze" : "freeze";
+  $("btnFreeze").setAttribute("aria-label", t($("btnFreeze").dataset.tAria));
 };
 
 // --- Lugares guardados ---
@@ -1003,12 +1110,12 @@ function openSpots() {
     btn.onclick = onclick;
     return btn;
   };
-  rows.push(mk("GPS del teléfono", gps ? `±${Math.round(gps.acc)} m` : "esperando…", !spotName, () => { useSpot(null); closeSheets(); toast("Usando el GPS."); }));
+  rows.push(mk(t("phoneGps"), gps ? `±${Math.round(gps.acc)} m` : t("waiting"), !spotName, () => { useSpot(null); closeSheets(); toast(t("usingGps")); }));
   for (const sp of spots) {
-    const del = Object.assign(document.createElement("button"), { className: "btn del", textContent: "✕", ariaLabel: "Borrar " + sp.nombre });
+    const del = Object.assign(document.createElement("button"), { className: "btn del", textContent: "✕", ariaLabel: t("del", { name: sp.nombre }) });
     del.onclick = () => { spots = spots.filter((x) => x !== sp); store.set("spots", spots); if (spotName === sp.nombre) useSpot(null); openSpots(); };
     const row = Object.assign(document.createElement("div"), { className: "row" });
-    row.append(mk(sp.nombre, `piso ${sp.floor}`, spotName === sp.nombre, () => { useSpot(sp.nombre); closeSheets(); toast(`Usando ${sp.nombre}.`); }), del);
+    row.append(mk(sp.nombre, t("floorN", { n: sp.floor }), spotName === sp.nombre, () => { useSpot(sp.nombre); closeSheets(); toast(t("using", { name: sp.nombre })); }), del);
     rows.push(row);
   }
   $("spotList").replaceChildren(...rows.map((r) => { const li = document.createElement("li"); li.append(r); return li; }));
@@ -1019,58 +1126,128 @@ $("calWhere").onclick = openSpots;
 $("setWhere").onclick = openSpots;
 $("spotClose").onclick = closeSheets;
 
-// Mapa sin librerías: mosaico de 5×5 teselas de OpenStreetMap (zoom 17, ~1.2 m por pixel) centrado en tu posición.
-// ponytail: no se puede arrastrar ni hacer zoom; cubre ~1.4 km. Si el GPS se fue más lejos, sal a la ventana y reabre.
-const MAPZ = 17, TILE = 256;
-let mapC = null, pin = null;
-const toTile = (lat, lon) => {
-  const n = 2 ** MAPZ, r = (lat * Math.PI) / 180;
+// Mapa sin librerías: teselas de OpenStreetMap en un canvas. Se arrastra con el dedo; zoom con botones.
+const TILE = 256;
+const toTile = (lat, lon, z) => {
+  const n = 2 ** z, r = (lat * Math.PI) / 180;
   return { x: ((lon + 180) / 360) * n, y: ((1 - Math.log(Math.tan(r) + 1 / Math.cos(r)) / Math.PI) / 2) * n };
 };
-const fromTile = (x, y) => {
-  const n = 2 ** MAPZ;
+const fromTile = (x, y, z) => {
+  const n = 2 ** z;
   return { lat: (Math.atan(Math.sinh(Math.PI * (1 - (2 * y) / n))) * 180) / Math.PI, lon: (x / n) * 360 - 180 };
 };
-function drawMap() {
-  const c = $("spotMap"), g = c.getContext("2d"), dpr = devicePixelRatio || 1, W = c.clientWidth, H = c.clientHeight;
-  c.width = W * dpr; c.height = H * dpr; g.setTransform(dpr, 0, 0, dpr, 0, 0);
-  const px = (t) => ({ x: W / 2 + (t.x - mapC.x) * TILE, y: H / 2 + (t.y - mapC.y) * TILE });
-  const draw = () => {
-    if (!pin) return;
-    const p = px(toTile(pin.lat, pin.lon));
-    g.lineWidth = 3; g.strokeStyle = "#000"; g.fillStyle = "#ff4d4d";
-    g.beginPath(); g.arc(p.x, p.y, 9, 0, 7); g.fill(); g.stroke();
-  };
-  for (let i = -2; i <= 2; i++) for (let j = -2; j <= 2; j++) {
-    const tx = Math.floor(mapC.x) + i, ty = Math.floor(mapC.y) + j, img = new Image();
-    img.onload = () => { const p = px({ x: tx, y: ty }); g.drawImage(img, p.x, p.y, TILE, TILE); draw(); };
-    img.src = `https://tile.openstreetmap.org/${MAPZ}/${tx}/${ty}.png`;
+// overlay(g, px) dibuja encima; px(lat, lon) da la posición en el canvas. onTap({ lat, lon }, x, y).
+function makeMap(canvas, z, { overlay, onTap }) {
+  const m = { z, c: null, px: null };
+  const tiles = new Map(); // ponytail: guarda todas las teselas vistas en memoria; basta para una sesión
+  let raf = 0, drag = null;
+  m.draw = () => { cancelAnimationFrame(raf); raf = requestAnimationFrame(paint); };
+  m.zoom = (d) => { m.z = Math.max(4, Math.min(18, m.z + d)); m.draw(); };
+  function paint() {
+    const g = canvas.getContext("2d"), dpr = devicePixelRatio || 1, W = canvas.clientWidth, H = canvas.clientHeight;
+    if (!W || !m.c) return;
+    canvas.width = W * dpr; canvas.height = H * dpr; g.setTransform(dpr, 0, 0, dpr, 0, 0);
+    g.fillStyle = "#222"; g.fillRect(0, 0, W, H);
+    const c = toTile(m.c.lat, m.c.lon, m.z), n = 2 ** m.z;
+    m.px = (lat, lon) => { const q = toTile(lat, lon, m.z); return { x: W / 2 + (q.x - c.x) * TILE, y: H / 2 + (q.y - c.y) * TILE }; };
+    for (let x = Math.floor(c.x - W / 2 / TILE); x <= Math.floor(c.x + W / 2 / TILE); x++)
+      for (let y = Math.max(0, Math.floor(c.y - H / 2 / TILE)); y <= Math.min(n - 1, Math.floor(c.y + H / 2 / TILE)); y++) {
+        const key = `${m.z}/${((x % n) + n) % n}/${y}`;
+        let img = tiles.get(key);
+        if (!img) { img = new Image(); img.onload = m.draw; img.src = `https://tile.openstreetmap.org/${key}.png`; tiles.set(key, img); }
+        if (img.complete && img.naturalWidth) g.drawImage(img, Math.round(W / 2 + (x - c.x) * TILE), Math.round(H / 2 + (y - c.y) * TILE), TILE, TILE);
+      }
+    overlay(g, m.px);
   }
-  draw();
+  canvas.addEventListener("pointerdown", (e) => { drag = { x: e.clientX, y: e.clientY, moved: false }; canvas.setPointerCapture(e.pointerId); });
+  canvas.addEventListener("pointermove", (e) => {
+    if (!drag || !m.c) return;
+    const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+    if (!drag.moved && Math.hypot(dx, dy) < 8) return;
+    const c = toTile(m.c.lat, m.c.lon, m.z);
+    m.c = fromTile(c.x - dx / TILE, c.y - dy / TILE, m.z);
+    Object.assign(drag, { x: e.clientX, y: e.clientY, moved: true });
+    m.draw();
+  });
+  canvas.addEventListener("pointerup", (e) => {
+    if (drag && !drag.moved && m.c) {
+      const r = canvas.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top, c = toTile(m.c.lat, m.c.lon, m.z);
+      onTap(fromTile(c.x + (x - r.width / 2) / TILE, c.y + (y - r.height / 2) / TILE, m.z), x, y);
+    }
+    drag = null;
+  });
+  canvas.addEventListener("pointercancel", () => (drag = null));
+  return m;
 }
-$("spotAdd").onclick = () => {
-  if (!pos) { toast("Espera unos segundos, todavía está cargando."); return; }
-  pin = { lat: pos.lat, lon: pos.lon }; mapC = toTile(pin.lat, pin.lon);
+const dot = (g, p, r, fill) => { g.lineWidth = 3; g.strokeStyle = "#000"; g.fillStyle = fill; g.beginPath(); g.arc(p.x, p.y, r, 0, 7); g.stroke(); g.fill(); };
+const mapLabel = (g, text, x, y) => {
+  g.font = "600 13px system-ui, sans-serif"; g.textBaseline = "middle"; g.lineJoin = "round";
+  g.lineWidth = 4; g.strokeStyle = "rgba(0,0,0,.85)"; g.strokeText(text, x, y); g.fillStyle = "#fff"; g.fillText(text, x, y);
+};
+
+// Lugar guardado: un pin rojo donde tocas. Zoom 17 (~1.2 m por pixel).
+let pin = null;
+const spotMap = makeMap($("spotMap"), 17, {
+  overlay: (g, px) => pin && dot(g, px(pin.lat, pin.lon), 9, "#ff4d4d"),
+  onTap: (ll) => { pin = ll; spotMap.draw(); },
+});
+// Sin posición todavía: el último GPS conocido, o el centro de Guadalajara.
+const GDL = { lat: 20.6767, lon: -103.3475 };
+function newSpot() {
+  const c = pos || store.get("lastPos", null) || GDL;
+  pin = { lat: c.lat, lon: c.lon }; spotMap.c = { ...pin };
   $("spotNew").hidden = false; $("spotAdd").hidden = true;
   $("spotFloor").value = cfg.floor; $("spotName").value = "";
-  drawMap();
-};
-$("spotMap").addEventListener("click", (e) => {
-  const c = $("spotMap"), r = c.getBoundingClientRect();
-  pin = fromTile(mapC.x + (e.clientX - r.left - r.width / 2) / TILE, mapC.y + (e.clientY - r.top - r.height / 2) / TILE);
-  drawMap();
+  spotMap.draw();
+}
+$("spotAdd").onclick = newSpot;
+function pickOnMap() { $("denied").hidden = true; gpsHelp = false; $("banner").hidden = true; openSpots(); newSpot(); }
+$("spotZoomIn").onclick = () => spotMap.zoom(1);
+$("spotZoomOut").onclick = () => spotMap.zoom(-1);
+
+// Lugares cerca: puntos de colores; tocar uno abre sus detalles.
+let mapHits = [];
+const findMap = makeMap($("findMap"), 12, {
+  overlay: (g, px) => {
+    mapHits = [];
+    const W = g.canvas.clientWidth, H = g.canvas.clientHeight, taken = [];
+    // Los más cercanos primero; un nombre solo se escribe si no tapa otro (el punto sí se dibuja).
+    const fits = (x0, y, w) => !taken.some(([a, b, c]) => x0 < b && x0 + w > a && Math.abs(y - c) < 17) && taken.push([x0, x0 + w, y]);
+    const me = pos && px(pos.lat, pos.lon);
+    if (me) fits(me.x - 10, me.y, 60);
+    for (const l of [...items].sort((a, b) => a.dist - b.dist)) {
+      const p = px(l.lat, l.lon);
+      if (p.x < -20 || p.y < -20 || p.x > W + 20 || p.y > H + 20) continue;
+      dot(g, p, 7, COLOR[l.tipo]);
+      g.font = "600 13px system-ui, sans-serif";
+      if (fits(p.x - 8, p.y, g.measureText(l.nombre).width + 22)) mapLabel(g, l.nombre, p.x + 11, p.y);
+      mapHits.push({ l, ...p });
+    }
+    if (me) { dot(g, me, 8, "#4fc3ff"); mapLabel(g, t("you"), me.x + 12, me.y); }
+  },
+  onTap: (_, x, y) => {
+    const h = mapHits.map((h) => ({ ...h, d: Math.hypot(h.x - x, h.y - y) })).sort((a, b) => a.d - b.d)[0];
+    if (h && h.d < 28) openInfo(h.l, true);
+  },
 });
+$("zoomIn").onclick = () => findMap.zoom(1);
+$("zoomOut").onclick = () => findMap.zoom(-1);
 $("spotSave").onclick = () => {
   const nombre = $("spotName").value.trim().slice(0, 30), floor = Number($("spotFloor").value);
-  if (!nombre) { toast("Ponle un nombre."); return; }
-  if (!(floor >= 0 && floor <= 100) || $("spotFloor").value === "") { toast("Piso entre 0 y 100."); return; }
+  if (!nombre) { toast(t("needName")); return; }
+  if (!(floor >= 0 && floor <= 100) || $("spotFloor").value === "") { toast(t("floorRange")); return; }
   spots = [...spots.filter((x) => x.nombre !== nombre), { nombre, lat: pin.lat, lon: pin.lon, floor }];
   store.set("spots", spots);
-  useSpot(nombre); closeSheets(); toast(`Guardado: ${nombre}. Ahora calibra de nuevo.`);
+  useSpot(nombre); closeSheets(); toast(t("saved", { name: nombre }));
 };
 
 // --- Ajustes ---
-const syncFov = () => { $("inFov").value = cfg.fov; $("fovOut").textContent = Math.round(cfg.fov); };
+// Idioma: el guardado, o el del navegador.
+initLang(store.get("lang", null));
+applyLang();
+$("inLang").replaceChildren(...Object.entries(LANGS).map(([k, v]) => new Option(v, k, false, k === getLang())));
+$("inLang").onchange = (e) => { setLang(e.target.value); store.set("lang", getLang()); applyLang(); syncFov(); focus = null; };
+const syncFov = () => { $("inFov").value = cfg.fov; $("fovOut").textContent = t("setFov", { n: Math.round(cfg.fov) }); };
 $("inFloor").value = cfg.floor; syncFov();
 if (cfg.ground != null) $("inGround").value = cfg.ground;
 function setFloor(val) {
@@ -1084,14 +1261,14 @@ $("inGround").onchange = (e) => {
   const v = Number(e.target.value);
   if (v >= 0 && v <= 5000) { cfg.ground = v; store.set("groundManual", v); recompute(); }
 };
-$("inFov").oninput = (e) => { cfg.fov = Number(e.target.value); $("fovOut").textContent = cfg.fov; store.set("fov", cfg.fov); };
+$("inFov").oninput = (e) => { cfg.fov = Number(e.target.value); syncFov(); store.set("fov", cfg.fov); };
 // Vuelve a la brújula tal cual: sin corrección de rumbo, inclinación ni zoom.
 function resetCal() {
   cfg.corr = DECLINATION; cfg.pitch = 0; cfg.fov = 65;
   store.set("corr", cfg.corr); store.set("pitch", 0); store.set("fov", 65); syncFov();
   gyroCorr = autoCorr = null; calibrated = false; calPoints = [];
 }
-$("calReset").onclick = () => { resetCal(); toast("Calibración borrada"); };
+$("calReset").onclick = () => { resetCal(); toast(t("calReset")); };
 $("btnSet").onclick = () => openSheet("setPanel");
 $("setClose").onclick = closeSheets;
 
@@ -1099,7 +1276,66 @@ $("setClose").onclick = closeSheets;
 // ?sim=lat,lon,rumbo,inclinación  prueba en computadora sin sensores ni cámara.
 const sim = new URLSearchParams(location.search).get("sim")?.split(",").map(Number);
 
-$("btnStart").onclick = async () => {
+// Sin cámara (bloqueada, no hay, o el usuario lo eligió): se usan la lista y el mapa.
+let noCam = false;
+function setNoCam(on) {
+  noCam = on;
+  for (const id of ["cross", "btnFreeze", "btnShot"]) $(id).hidden = on;
+}
+
+// Permisos bloqueados: pantalla con pasos para Chrome Android y Safari iPhone, y botón para reintentar.
+const blocked = new Set(); // "cam", "loc"
+const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+function showDenied() {
+  if (!blocked.size) { $("denied").hidden = true; return; }
+  $("deniedWhat").textContent = [...blocked].map((k) => t(k === "cam" ? "deniedCam" : "deniedLoc")).join(" ");
+  $("deniedSteps").prepend($("deniedSteps").querySelector(`[data-os="${isIOS ? "ios" : "android"}"]`));
+  $("deniedAlt").textContent = t(blocked.has("cam") ? "deniedNoCam" : "deniedPickMap");
+  closeSheets(); $("banner").hidden = true;
+  $("denied").hidden = false;
+  $("deniedRetry").focus();
+}
+$("deniedRetry").onclick = () => {
+  $("denied").hidden = true;
+  if (blocked.delete("cam")) startCamera();
+  if (blocked.delete("loc")) startGps();
+};
+$("deniedAlt").onclick = () => {
+  if (!blocked.delete("cam")) return pickOnMap();
+  setNoCam(true);
+  if (blocked.size) return showDenied();
+  $("denied").hidden = true; openFind();
+};
+
+async function startCamera() {
+  try {
+    video.srcObject = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: { ideal: "environment" }, width: { ideal: 1920 }, height: { ideal: 1080 } }, audio: false,
+    });
+    setNoCam(false);
+    autoPending = true; // calibración automática al abrir, en cuanto haya GPS, relieve y video
+  } catch (e) {
+    if (e.name === "NotAllowedError" || e.name === "SecurityError") { blocked.add("cam"); showDenied(); return; }
+    setNoCam(true); toast(t("noCam")); openFind(); // el teléfono no tiene cámara o no se pudo abrir
+  }
+}
+
+// GPS: si en 10 s no hay posición, se ofrece ayuda y elegirla en el mapa.
+let watchId = null, gpsTimer = 0, gpsHelp = false;
+function startGps() {
+  if (watchId != null) navigator.geolocation.clearWatch(watchId);
+  watchId = navigator.geolocation.watchPosition(onPosition, (e) => {
+    if (e.code === e.PERMISSION_DENIED) { blocked.add("loc"); showDenied(); }
+  }, { enableHighAccuracy: true, maximumAge: 5000 });
+  clearTimeout(gpsTimer);
+  gpsTimer = setTimeout(() => {
+    if (pos || !$("denied").hidden || calMode || autoMode) return;
+    gpsHelp = true;
+    banner(t("gpsHelp"), [t("gpsPick"), pickOnMap], [t("gpsKeepWaiting"), () => { $("banner").hidden = true; gpsHelp = false; }]);
+  }, 10000);
+}
+
+async function startApp(camera) {
   // iPhone: los sensores de movimiento piden permiso, y solo se puede pedir al tocar.
   try { await DeviceOrientationEvent.requestPermission?.(); } catch {}
   $("start").hidden = true;
@@ -1110,21 +1346,19 @@ $("btnStart").onclick = async () => {
     onPosition({ coords: { latitude: lat, longitude: lon, accuracy: 0 } });
     absBasis = cameraBasis(-h, 90 + p, 0);
     addEventListener("deviceorientationabsolute", onAbsolute); // las pruebas pueden girar el teléfono
+    if (!camera) { setNoCam(true); openFind(); }
     return;
   }
-  try {
-    video.srcObject = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: { ideal: "environment" }, width: { ideal: 1920 }, height: { ideal: 1080 } }, audio: false,
-    });
-    autoPending = true; // calibración automática al abrir, en cuanto haya GPS, relieve y video
-  } catch { toast("Sin cámara. Revisa los permisos del navegador."); }
+  if (camera) startCamera(); else { setNoCam(true); openFind(); }
   applyPos(); // si hay un lugar guardado en uso, no hace falta esperar al GPS
-  navigator.geolocation.watchPosition(onPosition, () => toast("Sin ubicación. Revisa los permisos."),
-    { enableHighAccuracy: true, maximumAge: 5000 });
+  startGps();
   if ("ondeviceorientationabsolute" in window) addEventListener("deviceorientationabsolute", onAbsolute);
   addEventListener("deviceorientation", onRelative);
   try { await navigator.wakeLock?.request("screen"); } catch {}
-};
+}
+$("btnStart").onclick = () => startApp(true);
+$("btnNoCam").onclick = () => startApp(false);
+$("whyMotion").hidden = typeof DeviceOrientationEvent?.requestPermission !== "function";
 if (sim) $("btnStart").click();
 if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
 </script>

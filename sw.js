@@ -1,8 +1,8 @@
 // Offline support. App files: network first (updates show up), cache as fallback.
 // Terrain tiles and photos never change: cache first, so the roof works with weak signal.
-const APP = "visor-app-v2";
+const APP = "visor-app-v3";
 const DATA = "visor-data-v1";
-const APP_FILES = ["./", "index.html", "geo.js", "terrain.js", "landmarks.js", "info/info.json", "manifest.webmanifest", "icon-192.png"];
+const APP_FILES = ["./", "index.html", "geo.js", "terrain.js", "landmarks.js", "i18n.js", "info/info.json", "manifest.webmanifest", "icon-192.png"];
 
 self.addEventListener("install", (e) => {
   e.waitUntil(caches.open(APP).then((c) => c.addAll(APP_FILES)));

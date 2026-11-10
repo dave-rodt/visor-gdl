@@ -1,9 +1,20 @@
 // Run: node check.mjs   (fails loudly if the geometry breaks)
 import assert from "node:assert/strict";
-import { distBearing, elevAngle, dirVector, cameraBasis, headingPitch, project, destination, rayMax, tiltBasis, solveCalibration, skyEdges, matchSkyline, withTowers } from "./geo.js";
+import { angleSpread, distBearing, elevAngle, dirVector, cameraBasis, headingPitch, project, destination, rayMax, tiltBasis, solveCalibration, skyEdges, matchSkyline, withTowers } from "./geo.js";
 import { LANDMARKS, PERFILES } from "./landmarks.js";
+import { STR } from "./i18n.js";
+
 
 const near = (a, b, tol, msg) => assert.ok(Math.abs(a - b) <= tol, `${msg}: ${a} vs ${b}`);
+
+// Compass steadiness: same spread on both sides of north; a steady compass reads ~0.
+near(angleSpread([358, 359, 0, 1, 2]), angleSpread([88, 89, 90, 91, 92]), 1e-9, "spread wraps at 0°");
+near(angleSpread([10, 10, 10]), 0, 1e-6, "steady compass");
+assert.ok(angleSpread([0, 20, -20, 15, -15]) > 10, "jumpy compass");
+
+// Both languages have every text.
+const miss = (a, b) => Object.keys(STR[a]).filter((k) => !(k in STR[b]));
+assert.deepEqual([miss("es", "en"), miss("en", "es")], [[], []], "i18n keys differ");
 
 // 1 degree of latitude is ~111.2 km, due north.
 let r = distBearing(20, -103, 21, -103);

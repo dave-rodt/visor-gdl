@@ -9,7 +9,8 @@
     "licencia": "CC BY-SA 4.0",
     "fuente": "https://commons.wikimedia.org/wiki/File:Cerro_Viejo_desde_Zapopan.JPG"
    }
-  ]
+  ],
+  "sin_en": true
  },
  "Catedral": {
   "texto": "La Catedral Metropolitana de Guadalajara, oficialmente Catedral Basílica de la Asunción de María Santísima, es la sede de la arquidiócesis de Guadalajara y uno de los principales templos de la Iglesia católica en México. Como iglesia catedral es la sede permanente del arzobispo de Guadalajara y está dedicada a la Asunción de María. El papa Pío XI le concedió el título litúrgico de basílica menor por breve apostólico el 21 de diciembre de 1938.",
@@ -33,7 +34,9 @@
     "licencia": "CC BY-SA 3.0",
     "fuente": "https://commons.wikimedia.org/wiki/File:Catedral_de_Guadalajara_11.JPG"
    }
-  ]
+  ],
+  "texto_en": "The Guadalajara Cathedral or Cathedral of the Assumption of Our Lady, located in Centro, Guadalajara, Jalisco, is the Roman Catholic cathedral of the Archdiocese of Guadalajara and a minor basilica. The cathedral of Guadalajara is among the oldest in the Americas, together with examples such as the cathedral of Mérida and the Cathedral of Santo Domingo in the Dominican Republic. It was built during the late Renaissance in the Spanish Renaissance style, except for its neo-Gothic spires which were built in the 19th century.",
+  "url_en": "https://en.wikipedia.org/wiki/Guadalajara_Cathedral"
  },
  "Templo Expiatorio": {
   "texto": "La Basílica del Santísimo Sacramento o conocido como Templo Expiatorio de Guadalajara es un templo católico dedicado al Santísimo Sacramento, ubicado en Guadalajara, Jalisco, en México. Es de estilo neogótico. Su construcción comenzó el 15 de agosto de 1897 y terminó 75 años después en 1972. El proyecto original fue diseñado por Salvador Collado Jasso. El Ing. Collado estuvo a cargo de la construcción hasta antes de morir en 1909.",
@@ -57,7 +60,9 @@
     "licencia": "CC BY-SA 4.0",
     "fuente": "https://commons.wikimedia.org/wiki/File:Guadalajara,_Jalisco,_M%C3%A9xico_5.0.jpg"
    }
-  ]
+  ],
+  "texto_en": "The Templo Expiatorio del Santísimo Sacramento is a Catholic church dedicated to the Blessed Sacrament, located in Guadalajara, Jalisco, Mexico. It is of neo-Gothic style and one of the most representative of this style in Mexico, together with the homonymous church in León, Guanajuato, and the Sanctuary of Guadalupe in Zamora, Michoacán. Its construction began on August 15, 1897 and ended 75 years later in 1972.",
+  "url_en": "https://en.wikipedia.org/wiki/Templo_Expiatorio_del_Sant%C3%ADsimo_Sacramento"
  },
  "Templo La Luz del Mundo": {
   "texto": "La Iglesia del Dios Vivo Columna y Apoyo de la Verdad «La Luz del Mundo» es una organización cristiana unicitaria y restauracionista presente en diversos países, cuya sede central se ubica en la ciudad mexicana de Guadalajara, Jalisco.",
@@ -81,7 +86,9 @@
     "licencia": "CC0",
     "fuente": "https://commons.wikimedia.org/wiki/File:LuzDelMundoHoustonTX.jpg"
    }
-  ]
+  ],
+  "texto_en": "The Iglesia del Dios Vivo, Columna y Apoyo de la Verdad, La Luz del Mundo —or simply La Luz del Mundo (LLDM)—is a Christian denomination in the nontrinitarian tradition, with its international headquarters in Guadalajara, Jalisco, Mexico. La Luz del Mundo practices a form of Restorationist theology centered on three leaders: Aarón—born Eusebio—Joaquín González, Samuel Joaquín Flores, and Naasón Joaquín García, who are regarded by the church as modern-day apostles of Jesus Christ.",
+  "url_en": "https://en.wikipedia.org/wiki/La_Luz_del_Mundo"
  },
  "Basílica de Zapopan": {
   "texto": "La Basílica de Zapopan y el Convento de Nuestra Señora de la Expectación de Zapopan es un santuario franciscano ubicado en el corazón de Zapopan en el estado de Jalisco, México, es el segundo recinto mariano más visitado del estado, seguido solo por la Catedral Basílica de Nuestra Señora de San Juan de los Lagos. Pertenece a la provincia franciscana de los santos Francisco y Santiago, que comprende: Jalisco, San Luis Potosí, Aguascalientes, Colima, Zacatecas, Tamaulipas, Coahuila, Nuevo León, Durango, Nayarit, Colima y Texas.",
@@ -105,7 +112,9 @@
     "licencia": "CC BY 2.5",
     "fuente": "https://commons.wikimedia.org/wiki/File:Felipe_de_Jesus_imagen_basilica_Zapopan.jpg"
    }
-  ]
+  ],
+  "texto_en": "The Basilica of Our Lady of Zapopan and the abbey of the same name are a 17th-century Franciscan sanctuary built in downtown Zapopan, in the state of Jalisco, Mexico.",
+  "url_en": "https://en.wikipedia.org/wiki/Basilica_of_Our_Lady_of_Zapopan"
  },
  "Hotel Riu": {
   "texto": "El Hotel Riu Plaza Guadalajara es un rascacielos ubicado en la ciudad de Guadalajara, Jalisco, cuya construcción comenzó en marzo de 2009 y finalizó en junio de 2011. Con 204 metros de altura es el edificio más alto de la ciudad y su área metropolitana, y el duodécimo más alto de México.",
@@ -129,7 +138,9 @@
     "licencia": "CC BY-SA 3.0",
     "fuente": "https://commons.wikimedia.org/wiki/File:Hotel_riu_plaza_guad.jpg"
    }
-  ]
+  ],
+  "texto_en": "Hotel Riu Plaza Guadalajara is a skyscraper hotel located in the city of Guadalajara, Jalisco, Mexico. At 204-metre tall (669 ft), it is the city and metropolitan area's tallest building and the twelfth highest in Mexico to date.",
+  "url_en": "https://en.wikipedia.org/wiki/Hotel_Riu_Plaza_Guadalajara"
  },
  "Puente Matute Remus": {
   "texto": "El puente Matute Remus es un puente atirantado ubicado en el estado de Jalisco, México. Esta obra forma parte de un sistema de puentes que localizados sobre la calzada Lázaro Cárdenas, en el cruce con la avenida López Mateos, una de las más transitadas de la ciudad y que además atraviesa los 4 municipios centrales de la Zona Metropolitana de Guadalajara. Con esta obra, la calzada Lázaro Cárdenas se convierte en un viaducto de bajas emisiones y un número menor de semáforos. \nEl puente lleva el nombre en honor al ingeniero civil Jorge Matute Remus, conocido por la reubicación del edificio de Teléfonos de México ubicado en avenida Juárez. Es una obra emblemática que recuerda a un hombre reconocido de Jalisco; con él, se honra a un profesional que dejó plasmadas sus huellas y su visión futura en la traza de la ciudad.",
@@ -153,7 +164,9 @@
     "licencia": "CC BY-SA 2.0",
     "fuente": "https://commons.wikimedia.org/wiki/File:Puente_Matute_Remus_Night.jpg"
    }
-  ]
+  ],
+  "texto_en": "The Matute Remus Bridge is a cable-stayed bridge located in the state of Jalisco, Mexico. This work is part of a system of bridges that are located on the Lázaro Cárdenas road, at the junction with López Mateos avenue, one of the busiest in the city and that also crosses the 4 central municipalities of the Guadalajara metropolitan area. With this work, the Lázaro Cárdenas road became a low-emission viaduct with fewer traffic lights. The bridge is named in honor of civil engineer Jorge Matute Remus, known for the relocation of the Mexico Telephone building located on Avenida Juárez.",
+  "url_en": "https://en.wikipedia.org/wiki/Matute_Remus_Bridge"
  },
  "La Minerva": {
   "texto": "La Minerva es un monumento representativo de la ciudad de Guadalajara, en el estado de Jalisco, México. La fuente tiene como elemento central una estatua de la diosa romana Minerva, obra del escultor Joaquín Arias. La obra se realizó durante el periodo del gobernador Agustín Yáñez, quien encargó el proyecto al arquitecto Julio de la Peña, y fue inaugurada en 1956.",
@@ -177,7 +190,9 @@
     "licencia": "CC BY-SA 4.0",
     "fuente": "https://commons.wikimedia.org/wiki/File:Glorieta_minerva_enero_2026_vista_a%C3%A9rea.png"
    }
-  ]
+  ],
+  "texto_en": "A statue of Minerva, the Roman goddess of wisdom and strategic warfare, stands in a roundabout fountain in Guadalajara, Mexico. The bronze sculpture rests on a large pedestal inscribed with the names of 18 notable citizens of the city. Depicted with Indigenous facial features, Minerva holds a spear and a shield, while the pedestal also bears the inscription, \"May justice, wisdom and strength guard this loyal city\", in Spanish. Although initially criticized by residents, the monument has since become a symbol of Guadalajara.",
+  "url_en": "https://en.wikipedia.org/wiki/Statue_of_Minerva%2C_Guadalajara"
  },
  "Los Arcos": {
   "texto": "Los Arcos de Guadalajara son un monumento representativo de la Ciudad de Guadalajara, en el estado de Jalisco, México.",
@@ -195,7 +210,9 @@
     "licencia": "CC BY-SA 4.0",
     "fuente": "https://commons.wikimedia.org/wiki/File:Arcos_Guadalajara.jpg"
    }
-  ]
+  ],
+  "texto_en": "Arcos de Guadalajara (1939-1959) is a monument in Guadalajara, in the Mexican state of Jalisco.",
+  "url_en": "https://en.wikipedia.org/wiki/Arcos_de_Guadalajara"
  },
  "Hospicio Cabañas": {
   "texto": "El Hospicio Cabañas, también conocido como Instituto Cultural Cabañas, es un museo ubicado en barrio de San Juan de Dios de la ciudad de Guadalajara, Jalisco, México. En 1810 el edificio abrió sus puertas como “Casa de la Caridad y la Misericordia”, como Instituto Cultural Cabañas el 13 de noviembre de 1980.",
@@ -219,7 +236,9 @@
     "licencia": "CC BY-SA 2.0",
     "fuente": "https://commons.wikimedia.org/wiki/File:MX_Guadalajara_0410_005_(17069443638).jpg"
    }
-  ]
+  ],
+  "texto_en": "The Hospicio Cabañas or Cabañas Museum in Guadalajara, Jalisco was one of the oldest and largest orphanage and hospital complexes in the Americas. Now turned into a museum, the main hall hosts the magnum opus frescoes of muralist painter José Clemente Orozco. The place was designated a UNESCO World Heritage Site in 1997.",
+  "url_en": "https://en.wikipedia.org/wiki/Hospicio_Caba%C3%B1as"
  },
  "Estadio Akron": {
   "texto": "El Estadio Chivas, anteriormente Estadio Omnilife, y conocido por razones de patrocinio como Estadio Akron, es un recinto deportivo ubicado en el municipio de Zapopan, situado al poniente de la zona metropolitana de Guadalajara en Jalisco, México. Cuenta con capacidad para 49 850 espectadores, y es propiedad del Club Deportivo Guadalajara.",
@@ -243,7 +262,9 @@
     "licencia": "CC BY-SA 3.0",
     "fuente": "https://commons.wikimedia.org/wiki/File:Estadio_Omnilife.jpg"
    }
-  ]
+  ],
+  "texto_en": "Estadio Akron, formerly known as Estadio Omnilife and Estadio Chivas (Estadio Chivas, Spanish pronunciation: [esˈtaðjo ˈtʃiβas]), is a multipurpose stadium in Mexico, located in Zapopan, Jalisco, a suburb west of Guadalajara. Used mostly for football matches, it is the home of Liga MX side Guadalajara. The stadium is named for Grupo Akron, a Mexican lubricant and fuel company.",
+  "url_en": "https://en.wikipedia.org/wiki/Estadio_Akron"
  },
  "Auditorio Telmex": {
   "texto": "El Auditorio Telmex es un espacio para espectáculos ubicado en la zona metropolitana de Guadalajara, México. Es parte del proyecto cultural más ambicioso y trascendente de la Universidad de Guadalajara. El auditorio es el primer edificio que toma vida para impulsar el desarrollo del Centro Cultural Universitario. La \"primera piedra\" fue instalada el 22 de julio de 2003 y la inauguración se realizó el 1 de septiembre de 2007, con una ceremonia amenizada por Plácido Domingo.",
@@ -255,7 +276,9 @@
     "licencia": "CC BY-SA 4.0",
     "fuente": "https://commons.wikimedia.org/wiki/File:Auditorio_telmex.jpg"
    }
-  ]
+  ],
+  "texto_en": "Auditorio Telmex is an indoor amphitheatre, located in Zapopan, Jalisco, Mexico.",
+  "url_en": "https://en.wikipedia.org/wiki/Telmex_Auditorium"
  },
  "Tlaquepaque": {
   "texto": "El municipio de San Pedro Tlaquepaque es un municipio del Estado de Jalisco, con una población de 687,127 habitantes, forma parte del Área metropolitana de Guadalajara. Es parte de la región del Centro Occidente de México. Su cabecera es la localidad de Tlaquepaque.",
@@ -279,7 +302,8 @@
     "licencia": "CC BY-SA 4.0",
     "fuente": "https://commons.wikimedia.org/wiki/File:Tlaquepaque,_Jalisco_I_02.jpg"
    }
-  ]
+  ],
+  "sin_en": true
  },
  "Puerto Vallarta": {
   "texto": "Puerto Vallarta es una ciudad y puerto mexicano ubicado en el estado de Jalisco, en la región Costa Sierra Occidental de la entidad, a 196 km de Guadalajara, la capital del estado; siendo la cabecera del municipio homónimo. Junto con el municipio de Bahía de Banderas del estado de Nayarit, conforma la Zona Metropolitana de Puerto Vallarta, siendo así la segunda más poblada de ambos estados. Actualmente es uno de los principales destinos turísticos de México.",
@@ -303,7 +327,9 @@
     "licencia": "CC BY-SA 4.0",
     "fuente": "https://commons.wikimedia.org/wiki/File:P._Vallarta,_Jalisco,_Mexico_(2021)_-_067.jpg"
    }
-  ]
+  ],
+  "texto_en": "Puerto Vallarta is a Mexican resort city on Bahía de Banderas of the Pacific coast of the Mexican state of Jalisco. Puerto Vallarta is the second largest urban agglomeration in the state after the Guadalajara metropolitan area. The city of Puerto Vallarta is the government seat of the municipality of Puerto Vallarta, which comprises the city as well as population centers outside of the city, extending from Boca de Tomatlán to the Nayarit border. The city is located at 20°40′N 105°16′W. The municipality has an area of 681 square kilometres (262.9 sq mi). To the north, it borders the southwest of the state of Nayarit. To the east, it borders the municipality of Mascota and San Sebastián del Oeste, and to the south, it borders the municipalities of Talpa de Allende and Cabo Corrientes.",
+  "url_en": "https://en.wikipedia.org/wiki/Puerto_Vallarta"
  },
  "Volcán de Tequila": {
   "texto": "El volcán de Tequila es un estratovolcán extinto de unos 2,930 m s. n. m. de altitud conformada por microclimas; en su cumbre se puede apreciar una elevación en forma de domo, fabricado por lava situado en las proximidades de Tequila, Jalisco, México.",
@@ -327,7 +353,9 @@
     "licencia": "CC BY-SA 4.0",
     "fuente": "https://commons.wikimedia.org/wiki/File:El_volc%C3%A1n_Sangang%C3%BCey_y_el_de_Tequila..jpg"
    }
-  ]
+  ],
+  "texto_en": "Tequila Volcano, or Volcán de Tequila is a stratovolcano located near Tequila, Jalisco, in Mexico. It stands at a height of 2,920 meters above sea level.",
+  "url_en": "https://en.wikipedia.org/wiki/Tequila_Volcano"
  },
  "Nevado de Colima": {
   "texto": "El volcán Nevado de Colima es un antiguo macizo volcánico ubicado en el estado de Jalisco, en el occidente de la República Mexicana. Su altura es de 4260m s. n. m. y no presenta actividad volcánica. Su cima presenta signos de grave erosión de fuego lo que ha dificultado determinar algunos aspectos de su violenta historia. Hoy en día es posible encontrar restos de materiales de lava en el volcán y flujos piroclásticos del nevado a más de 80 km de distancia del cráter ocasionadas por una erupción de magnitudes catastróficas acompañada de avalanchas y lahares voluminosos que se cree no fue anterior al pleistoceno.",
@@ -351,7 +379,8 @@
     "licencia": "CC BY-SA 3.0",
     "fuente": "https://commons.wikimedia.org/wiki/File:Colima_Volcano_and_Nevado_de_Colima.jpg"
    }
-  ]
+  ],
+  "sin_en": true
  },
  "Volcán de Colima": {
   "texto": "El Volcán de Colima, a veces llamado Volcán de Fuego de Colima para diferenciarlo del cercano Volcán Nevado de Colima, es un estratovolcán activo ubicado en los límites de los estados de Colima y Jalisco, en México. Su altitud oficial es de 3860 m sobre el nivel del mar.",
@@ -375,7 +404,9 @@
     "licencia": "CC BY 3.0",
     "fuente": "https://commons.wikimedia.org/wiki/File:Colimauno.jpg"
    }
-  ]
+  ],
+  "texto_en": "The Volcán de Colima, 4,260 m (13,980 ft), also known as Volcán de Fuego, is part of the Colima Volcanic Complex (CVC) consisting of Volcán de Colima, Nevado de Colima and the eroded El Cántaro. It is the youngest of the three and as of 2015 is one of the most active volcanoes in Mexico and in North America. Having been active for nearly 5 million years, and with frequent eruptions, the Volcán de Colima is considered a stratovolcano. It has erupted more than 40 times since 1576. One of the largest eruptions was on January 20–24, 1913. Nevado de Colima, also known as Tzapotépetl, lies 5 kilometres (3.1 mi) north of its more active neighbor and is the taller of the two at 4,271 meters. It is the 25th-most prominent peak in North America.",
+  "url_en": "https://en.wikipedia.org/wiki/Volc%C3%A1n_de_Colima"
  },
  "Cerro del Cuatro": {
   "texto": "El Cerro del Cuatro, es una elevación montañosa ubicada en el municipio de San Pedro Tlaquepaque.",
@@ -393,7 +424,8 @@
     "licencia": "CC BY 2.0",
     "fuente": "https://commons.wikimedia.org/wiki/File:Cerro_del_Cuatro_desde_el_Huehuenton.jpg"
    }
-  ]
+  ],
+  "sin_en": true
  },
  "Aeropuerto GDL": {
   "texto": "El Aeropuerto Internacional de Guadalajara oficialmente Aeropuerto Internacional Miguel Hidalgo y Costilla es la terminal aérea que presta servicio a Guadalajara y su zona conurbada. Fue inaugurado en 1966 y se localiza en el municipio de Tlajomulco de Zúñiga, a 16 kilómetros del centro de la ciudad de Guadalajara, Jalisco. Recibe su nombre en honor al prócer de la Independencia de México, el sacerdote y militar Miguel Hidalgo y Costilla.",
@@ -417,7 +449,9 @@
     "licencia": "CC BY-SA 4.0",
     "fuente": "https://commons.wikimedia.org/wiki/File:GDL_(11).jpg"
    }
-  ]
+  ],
+  "texto_en": "Guadalajara International Airport (Spanish: Aeropuerto Internacional de Guadalajara); officially Aeropuerto Internacional Miguel Hidalgo y Costilla (Miguel Hidalgo y Costilla International Airport) (IATA: GDL, ICAO: MMGL), is the international airport serving Guadalajara, Jalisco, Mexico. It is Mexico's third-busiest airport in passenger traffic, aircraft operations, and cargo volume, offering flights across Mexico, the Americas, and Europe. It ranks ninth in Latin America and 39th in North America by passenger traffic.",
+  "url_en": "https://en.wikipedia.org/wiki/Guadalajara_International_Airport"
  },
  "Cerro El Tajo": {
   "texto": "El bosque La Primavera es una amplia zona forestal, que alberga en su interior una caldera volcánica con un IEV de 6.4. Se ubica en México, en el Estado de Jalisco. Comparte extensión territorial con los municipios de Tala, El Arenal, Zapopan y Tlajomulco de Zúñiga. También conocido como el pulmón de la Zona Metropolitana de Guadalajara. Desde 1934 fue declarado zona forestal protegida, en 1980 se declaró una zona de Protección Forestal y Refugio de la Fauna Silvestre, por el presidente José López Portillo. Y en el 2000 adquirió la categoría de Área de Protección de Flora y Fauna.",
@@ -441,7 +475,9 @@
     "licencia": "CC BY-SA 4.0",
     "fuente": "https://commons.wikimedia.org/wiki/File:Arroyo_las_Tortugas.jpg"
    }
-  ]
+  ],
+  "texto_en": "La Primavera Biosphere Reserve, also known as La Primavera Flora and Fauna Protection Area, is a protected natural area in western Mexico. It is located in the state of Jalisco, immediately west of the city of Guadalajara.",
+  "url_en": "https://en.wikipedia.org/wiki/La_Primavera_Biosphere_Reserve"
  },
  "Cerro El Chapulín": {
   "texto": "El bosque La Primavera es una amplia zona forestal, que alberga en su interior una caldera volcánica con un IEV de 6.4. Se ubica en México, en el Estado de Jalisco. Comparte extensión territorial con los municipios de Tala, El Arenal, Zapopan y Tlajomulco de Zúñiga. También conocido como el pulmón de la Zona Metropolitana de Guadalajara. Desde 1934 fue declarado zona forestal protegida, en 1980 se declaró una zona de Protección Forestal y Refugio de la Fauna Silvestre, por el presidente José López Portillo. Y en el 2000 adquirió la categoría de Área de Protección de Flora y Fauna.",
@@ -465,7 +501,9 @@
     "licencia": "CC BY-SA 4.0",
     "fuente": "https://commons.wikimedia.org/wiki/File:Arroyo_las_Tortugas.jpg"
    }
-  ]
+  ],
+  "texto_en": "La Primavera Biosphere Reserve, also known as La Primavera Flora and Fauna Protection Area, is a protected natural area in western Mexico. It is located in the state of Jalisco, immediately west of the city of Guadalajara.",
+  "url_en": "https://en.wikipedia.org/wiki/La_Primavera_Biosphere_Reserve"
  },
  "Biblioteca Juan José Arreola": {
   "texto": "La  Biblioteca Pública del Estado de Jalisco \"Juan José Arreola\"  es una institución dedicada a la promoción de la lectura, el acceso a la información y la difusión cultural en el estado de Jalisco, México. Recibe su nombre en honor a Juan José Arreola, reconocido escritor mexicano nacido en Jalisco.",
@@ -483,7 +521,9 @@
     "licencia": "CC0",
     "fuente": "https://commons.wikimedia.org/wiki/File:Biblioteca_P%C3%BAblica_del_Estado_de_Jalisco_por_adentro.jpg"
    }
-  ]
+  ],
+  "texto_en": "The Juan José Arreola Public Library of the State of Jalisco is an institution dedicated to promoting reading, providing access to information, and disseminating culture in the state of Jalisco, Mexico. It is named in honor of Juan José Arreola, a renowned Mexican writer born in Jalisco. It is run by the University of Guadalajara.",
+  "url_en": "https://en.wikipedia.org/wiki/Public_Library_of_the_State_of_Jalisco"
  },
  "Estadio Jalisco": {
   "texto": "El Estadio Jalisco es un estadio de fútbol ubicado en Guadalajara, Jalisco, México. Con una capacidad de 55 020 espectadores. Fue inaugurado el 31 de enero de 1960, y ha sido sede en la Copa Mundial de Fútbol de 1970 y Copa Mundial de Fútbol de 1986. Actualmente es la casa de los equipos Atlas, de la Primera División y los Leones Negros de la Universidad de Guadalajara de la Liga de Expansión MX. También fue el estadio como local de Guadalajara (1960-2010), Oro (1960-70), Nacional (1961-65), Jalisco (1970-80) y Cafessa (2019-21). Es el tercer estadio más grande de México después del Estadio Azteca y el Estadio Olímpico Universitario.",
@@ -501,7 +541,9 @@
     "licencia": "CC BY 2.0",
     "fuente": "https://commons.wikimedia.org/wiki/File:Jalisco_Stadium_panoramic_retouched.jpg"
    }
-  ]
+  ],
+  "texto_en": "Jalisco Stadium is a football stadium located in Guadalajara, Jalisco. It is the third-largest Mexican football stadium behind Estadio Azteca and Estadio Olímpico Universitario with a capacity of 53,937 spectators.",
+  "url_en": "https://en.wikipedia.org/wiki/Estadio_Jalisco"
  },
  "Mazatlán": {
   "texto": "Mazatlán es una ciudad ubicada en el estado mexicano de Sinaloa, cabecera del municipio del mismo nombre. Es apodada «La perla del Pacífico». De acuerdo con el censo de población y vivienda 2020, Mazatlán tenía una población de 441 975 habitantes, por lo que se mantiene como la segunda ciudad más poblada de Sinaloa, después de Culiacán.",
@@ -525,7 +567,9 @@
     "licencia": "CC BY-SA 4.0",
     "fuente": "https://commons.wikimedia.org/wiki/File:Angel_Flores_Mazatl%C3%A1n.jpg"
    }
-  ]
+  ],
+  "texto_en": "Mazatlán is a city in the Mexican state of Sinaloa. The city serves as the municipal seat for the surrounding municipio, known as the Mazatlán Municipality. It is located on the Pacific coast across from the southernmost tip of the Baja California peninsula.",
+  "url_en": "https://en.wikipedia.org/wiki/Mazatl%C3%A1n"
  },
  "Cancún": {
   "texto": "Cancún es una ciudad turística mexicana ubicada en la península de Yucatán en el estado de Quintana Roo, cabecera del municipio de Benito Juárez. Es la ciudad más poblada del estado, con 888 797 habitantes según el censo del Instituto Nacional de Estadística y Geografía en 2020. Considerada un destino turístico de talla mundial, con certificación de la Organización Mundial del Turismo, el proyecto de su desarrollo inició operaciones en 1974 como Centro Integralmente Planeado, pionero de Fonatur, antes conocido como Infratur.",
@@ -549,7 +593,9 @@
     "licencia": "CC BY 2.0",
     "fuente": "https://commons.wikimedia.org/wiki/File:San_Miguelito_Ruins_(12973805005).jpg"
    }
-  ]
+  ],
+  "texto_en": "Cancún is the most populous city in the state of Quintana Roo, located in southeast Mexico, on the northeast coast of the Yucatán Peninsula. It is a significant tourist destination in Mexico and the seat of the municipality of Benito Juárez. The city is situated on the Caribbean Sea and is one of Mexico's easternmost points. Cancún is located just north of Mexico's Caribbean coast resort area known as the Riviera Maya. It encompasses the Hotel Zone, which is the main area for tourism.",
+  "url_en": "https://en.wikipedia.org/wiki/Canc%C3%BAn"
  },
  "Ciudad de México": {
   "texto": "La Ciudad de México, antes denominada también México, Distrito Federal, es la capital de los Estados Unidos Mexicanos, sede de los Poderes de la Unión y una de las entidades federativas que, junto con los treinta y un estados, conforman el país. Está dividida en dieciséis demarcaciones territoriales. Se localiza en el valle de México en la región centro sur del país; colinda al norte, oeste y este con el Estado de México y al sur con Morelos. Tiene una extensión territorial de 1495 km², lo que representa el 0.1 % del territorio nacional, siendo la entidad más pequeña del país.",
@@ -573,6 +619,8 @@
     "licencia": "CC BY-SA 4.0",
     "fuente": "https://commons.wikimedia.org/wiki/File:Palacio_de_Bellas_Artes,_Mexico_City,_MX.jpg"
    }
-  ]
+  ],
+  "texto_en": "Mexico City is the capital and largest city of Mexico, as well as the most populous city in North America. It is one of the world's leading cultural and financial centers and, according to the Globalization and World Cities Research Network's 2024 ranking, is classified as an Alpha world city. Located in the Valley of Mexico on the high Mexican Central Plateau, the city sits at an altitude of 2,240 meters. It is divided into 16 boroughs, or alcaldías, which are further subdivided into neighborhoods, or colonias.",
+  "url_en": "https://en.wikipedia.org/wiki/Mexico_City"
  }
 }
