@@ -29,7 +29,7 @@ export const LANDMARKS = [
   { nombre: "Los Arcos", lat: 20.674436, lon: -103.38482, alt: 1588 + 20, h: 20, w: 25, perfil: "arco", tipo: "e", wiki: "Arcos de Guadalajara" }, // aprox
   { nombre: "Hospicio Cabañas", lat: 20.67687, lon: -103.3377, alt: 1540 + 35, h: 35, w: 165, perfil: "cupula", tipo: "e", wiki: "Hospicio Cabañas" }, // aprox
   { nombre: "Fiesta Americana", lat: 20.673643, lon: -103.388991, alt: 1590 + 80, h: 80, w: 45, perfil: "torre", tipo: "e" }, // aprox: 22 pisos (Posadas), junto a La Minerva
-  { nombre: "Punto São Paulo", lat: 20.70302, lon: -103.37571, alt: 1549 + 170, h: 170, w: 40, perfil: "torre", tipo: "e" }, // aprox
+  { nombre: "Punto São Paulo", lat: 20.70302, lon: -103.37571, alt: 1549 + 103, h: 103, w: 40, perfil: "torre", tipo: "e" }, // 103 m (skyscraperpage, Américas 1501)
   { nombre: "Classiqa Chapalita", lat: 20.65891, lon: -103.431653, alt: 1649 + 69, h: 69, w: 35, perfil: "torre", tipo: "e" }, // 69 m, 17 niveles (portafolio ADC 2026); ancho aprox; pin de Google Maps
   { nombre: "Andares", lat: 20.71139, lon: -103.41297, alt: 1582 + 40, h: 40, w: 150, perfil: "bloque", tipo: "e" }, // aprox
   { nombre: "Biblioteca Juan José Arreola", lat: 20.73809, lon: -103.38105, alt: 1559 + 35, h: 35, w: 130, perfil: "bloque", tipo: "e", wiki: 'Biblioteca Pública del Estado de Jalisco "Juan José Arreola"' }, // aprox
@@ -104,7 +104,7 @@ export const PADEL = [
 
 // Torres solo para la calibración por horizonte: su silueta se suma al horizonte esperado; no se dibujan ni salen en la lista.
 // Sin nombres a propósito: nunca se muestran.
-// Fuente: OpenStreetMap (height, o building:levels × 3.2 m). w = lado mayor de la caja del contorno, aprox.
+// Fuente: OpenStreetMap (height, o building:levels × 3.2 m); alturas corregidas con el portafolio ADC 2026 donde coincide. w = lado mayor de la caja del contorno, aprox.
 // La altura del suelo sale del relieve al calcular.
 export const TORRES = [
   { lat: 20.712814, lon: -103.412237, h: 173, w: 51 },
@@ -115,7 +115,7 @@ export const TORRES = [
   { lat: 20.707684, lon: -103.412724, h: 100, w: 63 },
   { lat: 20.707033, lon: -103.413841, h: 99, w: 41 },
   { lat: 20.708086, lon: -103.414114, h: 93, w: 73 },
-  { lat: 20.698037, lon: -103.372927, h: 91, w: 99 },
+  { lat: 20.698037, lon: -103.372927, h: 143, w: 99 },
   { lat: 20.664737, lon: -103.349687, h: 90, w: 62 },
   { lat: 20.721854, lon: -103.427123, h: 84, w: 25 },
   { lat: 20.721552, lon: -103.427263, h: 84, w: 30 },
@@ -128,11 +128,11 @@ export const TORRES = [
   { lat: 20.721507, lon: -103.42653, h: 80, w: 27 },
   { lat: 20.698829, lon: -103.373094, h: 80, w: 36 },
   { lat: 20.72114, lon: -103.426393, h: 77, w: 24 },
-  { lat: 20.639921, lon: -103.409188, h: 75, w: 44 },
-  { lat: 20.640113, lon: -103.409539, h: 75, w: 45 },
+  { lat: 20.639921, lon: -103.409188, h: 87, w: 44 },
+  { lat: 20.640113, lon: -103.409539, h: 87, w: 45 },
   { lat: 20.663604, lon: -103.349814, h: 72, w: 42 },
   { lat: 20.723068, lon: -103.418169, h: 70, w: 112 },
-  { lat: 20.698248, lon: -103.373514, h: 70, w: 56 },
+  { lat: 20.698248, lon: -103.373514, h: 122, w: 56 },
   { lat: 20.667838, lon: -103.368815, h: 66, w: 36 },
   { lat: 20.689676, lon: -103.474831, h: 64, w: 59 },
   { lat: 20.67609, lon: -103.413443, h: 64, w: 49 },
@@ -140,6 +140,17 @@ export const TORRES = [
   { lat: 20.70027, lon: -103.373664, h: 64, w: 40 },
   { lat: 20.698809, lon: -103.372372, h: 64, w: 25 },
   { lat: 20.721724, lon: -103.429256, h: 60, w: 63 },
+  // Portafolio ADC 2026: alturas oficiales; posición de Google Maps, OSM o skyscraperpage.
+  { lat: 20.70143, lon: -103.37515, h: 130, w: 35 },
+  { lat: 20.69851, lon: -103.3727, h: 105, w: 35 },
+  { lat: 20.69746, lon: -103.37257, h: 105, w: 40 },
+  { lat: 20.69768, lon: -103.36873, h: 87, w: 35 },
+  { lat: 20.70225, lon: -103.37639, h: 86, w: 35 },
+  { lat: 20.65078, lon: -103.39841, h: 80, w: 35 },
+  { lat: 20.67977, lon: -103.39141, h: 64, w: 35 },
+  { lat: 20.69998, lon: -103.37562, h: 76, w: 35 },
+  { lat: 20.57007, lon: -103.45511, h: 85, w: 35 },
+  { lat: 20.70947, lon: -103.40971, h: 140, w: 40 },
 ];
 
 // Siluetas vistas de frente. x de -0.5 a 0.5 (fracción del ancho), y de 0 (suelo) a 1 (punta).
