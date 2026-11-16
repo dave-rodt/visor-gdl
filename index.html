@@ -51,6 +51,10 @@
 
   #bar { position: fixed; bottom: max(12px, env(safe-area-inset-bottom)); left: 12px; right: 12px; display: flex; gap: 10px; }
   #bar button { flex: 1; min-height: 52px; border-radius: 14px; font-weight: 600; color: #fff; font-size: 15px; }
+  #padelChip { pointer-events: auto; min-height: 44px; padding: 7px 14px; border-radius: 999px; font-size: 13px; font-weight: 600; color: #000; background: #ff9f6b; }
+  #btnFind { box-shadow: inset 0 0 0 0 rgba(255,159,107,.45); }
+  #btnFind.holding { box-shadow: inset 0 0 0 40px rgba(255,159,107,.45); transition: box-shadow 3s linear; }
+  #btnFind { -webkit-touch-callout: none; user-select: none; -webkit-user-select: none; }
   #bar #btnCal { flex: 1.3; background: var(--accent); color: #000; }
   #btnFreeze { position: fixed; right: 12px; bottom: calc(max(12px, env(safe-area-inset-bottom)) + 66px); width: 52px; height: 52px; border-radius: 50%; font-size: 20px; }
   #btnFreeze.on { background: var(--accent); color: #000; }
@@ -146,6 +150,7 @@
 <div id="top">
   <div id="status" class="glass" data-t="gpsWait">Esperando GPS…</div>
   <button id="calBadge" class="warn" hidden data-t="uncal">Sin calibrar</button>
+  <button id="padelChip" hidden data-t-aria="padelExit" aria-label="Salir del modo pádel">🎾 ✕</button>
 </div>
 <div id="banner" class="glass" hidden><span id="bannerText" aria-live="polite"></span><button id="bannerBtn"></button><button id="bannerBtn2" class="plain" hidden></button></div>
 <div id="tapMark" hidden></div>
@@ -306,7 +311,7 @@
 <script type="module">
 import { angleSpread, distBearing, elevAngle, dirVector, cameraBasis, headingPitch, project, smoothBasis, rayMax, tiltBasis, solveCalibration, skyEdges, matchSkyline, withTowers } from "./geo.js";
 import { loadArea, elevation } from "./terrain.js";
-import { LANDMARKS, PERFILES } from "./landmarks.js";
+import { LANDMARKS, PADEL, TORRES, PERFILES } from "./landmarks.js";
 import { t, initLang, setLang, applyLang, getLang, LANGS } from "./i18n.js";
 
 const FLOOR_HEIGHT = 3.2;   // m por piso
@@ -335,6 +340,11 @@ fetch("info/info.json").then((r) => (r.ok ? r.json() : {})).then((j) => { INFO =
 
 let pos = null;        // { lat, lon, acc }
 let items = [];        // puntos con distancia, rumbo, ángulo vertical y silueta
+let padelItems = [];   // lo mismo para las canchas de pádel
+let towerItems = [];   // torres que solo usa la calibración por horizonte
+const PADEL_KM = 15;   // radio del modo pádel
+let padel = false;     // modo pádel: cámara, lista, mapa y flecha muestran solo pádel
+const shownItems = () => (padel ? padelItems : items); // la calibración siempre usa items
 let skyline = null;    // [{ az, angle, dist }] cada 0.5°
 let reliefFor = null, reliefReady = false, calcFor = null;
 
@@ -431,9 +441,10 @@ function recompute() {
     skyline = [];
     for (let az = 0; az < 360; az += 0.5) skyline.push({ az, ...rayMax(sample, pos.lat, pos.lon, h0, az, 500, FAR_M) });
   }
-  items = LANDMARKS.map((l) => {
+  const place = (l) => {
     const { dist, bearing } = distBearing(pos.lat, pos.lon, l.lat, l.lon);
-    const it = { ...l, dist, bearing, el: elevAngle(h0, l.alt, dist) };
+    const alt = l.alt ?? (sample(l.lat, l.lon, dist) || cfg.ground || 1560) + (l.h ?? 5); // pádel y torres: suelo + altura
+    const it = { ...l, alt, dist, bearing, el: elevAngle(h0, alt, dist) };
     if (reliefReady && dist <= FAR_M) {
       // Oculto si el relieve entre tú y el punto sube más que su punta.
       it.hidden = rayMax(sample, pos.lat, pos.lon, h0, bearing, 500, dist * 0.95).angle > it.el + 0.3;
@@ -442,7 +453,10 @@ function recompute() {
     // Zonas que no se ven: la etiqueta va sobre el horizonte, apuntando hacia ellas.
     if (l.tipo === "z" && (dist > FAR_M || it.hidden)) { it.onHorizon = true; it.hidden = false; it.el = skylineAt(bearing); }
     return it;
-  }).filter((l) => l.dist > 150);
+  };
+  items = LANDMARKS.map(place).filter((l) => l.dist > 150);
+  towerItems = TORRES.map((l) => place({ ...l, tipo: "t", perfil: "torre" })).filter((l) => l.dist > 150);
+  padelItems = PADEL.map((l) => place({ ...l, tipo: "p" })).filter((l) => l.dist <= PADEL_KM * 1000);
 }
 
 // Silueta de una montaña: horizonte cada 0.1° alrededor de la cumbre, mientras esté
@@ -518,8 +532,8 @@ const card = (az) => t("dirs")[Math.round((((az % 360) + 360) % 360) / 45) % 8];
 const locale = () => (getLang() === "es" ? "es-MX" : "en-US");
 const fmtDist = (m) => m < 10000 ? (m / 1000).toFixed(1) + " km" : Math.round(m / 1000).toLocaleString(locale()) + " km";
 const distDir = (l) => t("distDir", { dist: fmtDist(l.dist), dir: card(l.bearing) });
-const COLOR = { m: "#9be7a1", e: "#ffd54a", z: "#8fd3ff" };
-const TIPO = { m: "tipoM", e: "tipoE", z: "tipoZ" };
+const COLOR = { m: "#9be7a1", e: "#ffd54a", z: "#8fd3ff", p: "#ff9f6b" };
+const TIPO = { m: "tipoM", e: "tipoE", z: "tipoZ", p: "tipoP" };
 
 // --- Dibujo ---
 let view = null; // { b, f, cx, cy } del último cuadro
@@ -612,7 +626,7 @@ function draw() {
   }
 
   const shown = [];
-  for (const l of items) {
+  for (const l of shownItems()) {
     const p = P(l.bearing, l.el);
     if (!p || p.x < -40 || p.x > W + 40) continue;
     if (!l.hidden) {
@@ -706,7 +720,7 @@ function openInfo(l, back = false) {
   const d = INFO[l.nombre];
   $("infoName").textContent = l.nombre;
   const chips = [t(TIPO[l.tipo]), distDir(l)];
-  if (l.tipo !== "z") chips.push(t("masl", { n: Math.round(l.alt).toLocaleString(locale()) }));
+  if (l.tipo === "e" || l.tipo === "m") chips.push(t("masl", { n: Math.round(l.alt).toLocaleString(locale()) }));
   if (l.hidden) chips.push(t("hiddenByRelief"));
   if (l.onHorizon) chips.push(t("notVisible"));
   $("chips").replaceChildren(...chips.map((t) => Object.assign(document.createElement("span"), { textContent: t })));
@@ -722,10 +736,11 @@ function openInfo(l, back = false) {
 
   // En inglés: el artículo de Wikipedia en inglés si existe; si no, el de español.
   const en = getLang() === "en" && d?.url_en;
-  $("infoText").textContent = (en ? d.texto_en : d?.texto) || t("noDesc");
+  $("infoText").textContent = l.tipo === "p" ? t("padelInfo") : (en ? d.texto_en : d?.texto) || t("noDesc");
   const link = Object.assign(document.createElement("a"), { target: "_blank", rel: "noopener" });
-  link.href = (en ? d.url_en : d?.url) || `https://${getLang()}.m.wikipedia.org/w/index.php?search=${encodeURIComponent(l.nombre + " Jalisco")}`;
-  link.textContent = t(d?.url ? "readMore" : "searchWiki");
+  link.href = l.tipo === "p" ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(l.nombre + ", Guadalajara, Jalisco")}`
+    : (en ? d.url_en : d?.url) || `https://${getLang()}.m.wikipedia.org/w/index.php?search=${encodeURIComponent(l.nombre + " Jalisco")}`;
+  link.textContent = t(l.tipo === "p" ? "openMaps" : d?.url ? "readMore" : "searchWiki");
   $("infoLink").replaceChildren(link);
   $("credits").replaceChildren(...fotos.map((f, i) => {
     const li = document.createElement("li");
@@ -748,7 +763,7 @@ let target = null, guideMsg = "";
 const dot3 = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
 
 function drawTarget(W, H, heading) {
-  const l = items.find((i) => i.nombre === target);
+  const l = shownItems().find((i) => i.nombre === target);
   if (!l) return;
   const turn = wrap(l.bearing - heading);
   const msg = Math.abs(turn) < 4 ? t("ahead", { name: l.nombre, dist: fmtDist(l.dist) })
@@ -788,13 +803,13 @@ function openFind(tab = findTab) {
   for (const [id, box, on] of [["tabList", "findList", tab === "list"], ["tabMap", "findMapBox", tab === "map"]]) {
     $(id).setAttribute("aria-selected", on); $(box).hidden = !on || noPos;
   }
-  const groups = [["m", "groupM"], ["e", "groupE"], ["z", "groupZ"]];
+  const groups = padel ? [["p", "groupP"]] : [["m", "groupM"], ["e", "groupE"], ["z", "groupZ"]];
   $("findList").replaceChildren(...groups.flatMap(([tipo, title]) => [
     Object.assign(document.createElement("div"), { className: "group", textContent: t(title) }),
-    ...items.filter((l) => l.tipo === tipo).sort((a, b) => a.dist - b.dist).map((l) => {
+    ...shownItems().filter((l) => l.tipo === tipo).sort((a, b) => a.dist - b.dist).map((l) => {
       const row = Object.assign(document.createElement("div"), { className: "row" });
       const btn = Object.assign(document.createElement("button"), { className: "btn" });
-      btn.append(l.nombre, Object.assign(document.createElement("small"), { textContent: distDir(l) }));
+      btn.append(l.nombre, Object.assign(document.createElement("small"), { textContent: distDir(l) + (padel ? " · " + t("straight") : "") }));
       btn.onclick = () => openInfo(l, true);
       row.append(btn);
       if (basis) { // la flecha necesita brújula
@@ -805,10 +820,30 @@ function openFind(tab = findTab) {
       return row;
     }),
   ]));
+  if (padel && !noPos && !padelItems.length) $("findList").append(Object.assign(document.createElement("p"), { textContent: t("noPadelNear", { n: PADEL_KM }) }));
   openSheet("findPanel");
   if (tab === "map" && !noPos) { findMap.c ??= { lat: pos.lat, lon: pos.lon }; findMap.draw(); }
 }
-$("btnFind").onclick = () => openFind();
+$("btnFind").onclick = () => { if (secretFired) secretFired = false; else openFind(); };
+// Secreto: mantener "Buscar" 5 s cambia al modo pádel (y de vuelta).
+let secretTimer = 0, secretFired = false;
+$("btnFind").addEventListener("pointerdown", () => {
+  secretFired = false;
+  // Tras 2 s el botón se va llenando; a los 5 s cambia de modo.
+  holdTimer = setTimeout(() => $("btnFind").classList.add("holding"), 2000);
+  secretTimer = setTimeout(() => { secretFired = true; stopHold(); setPadel(!padel); openFind("list"); }, 5000);
+});
+let holdTimer = 0;
+const stopHold = () => { clearTimeout(secretTimer); clearTimeout(holdTimer); $("btnFind").classList.remove("holding"); };
+for (const ev of ["pointerup", "pointerleave", "pointercancel"]) $("btnFind").addEventListener(ev, stopHold);
+function setPadel(on) {
+  padel = on; target = null; $("guide").hidden = true; focus = null;
+  $("padelChip").hidden = !on;
+  navigator.vibrate?.(80);
+  toast(t(on ? "padelOn" : "padelOff"));
+}
+$("padelChip").onclick = () => { setPadel(false); if (!$("findPanel").hidden) openFind(); };
+$("btnFind").addEventListener("contextmenu", (e) => e.preventDefault()); // Android: sin menú al mantener
 $("tabList").onclick = () => openFind("list");
 $("tabMap").onclick = () => { if (pos) findMap.c = { lat: pos.lat, lon: pos.lon }; openFind("map"); };
 $("findPick").onclick = () => pickOnMap();
@@ -944,7 +979,7 @@ function tryAuto() {
     return { az: (Math.atan2(r[0], r[1]) * DEG + corr + 360) % 360, el: Math.asin(r[2] / Math.hypot(...r)) * DEG };
   };
   // Horizonte esperado: relieve más el techo de los edificios conocidos que no estén tapados.
-  const S = withTowers(skylineAt, items.filter((l) => l.tipo === "e" && !l.hidden)
+  const S = withTowers(skylineAt, [...items, ...towerItems].filter((l) => (l.tipo === "e" || l.tipo === "t") && !l.hidden)
     .map((l) => ({ ...l, base: l.alt - l.h, poly: (PERFILES[l.perfil] || PERFILES.bloque).poly })), viewerAlt());
   // Solo se busca en las filas donde podría estar el horizonte: rumbo ±55° (vista + error de brújula), altura ±3°.
   const c = dirAt(cx, cy).az;
@@ -1215,7 +1250,7 @@ const findMap = makeMap($("findMap"), 12, {
     const fits = (x0, y, w) => !taken.some(([a, b, c]) => x0 < b && x0 + w > a && Math.abs(y - c) < 17) && taken.push([x0, x0 + w, y]);
     const me = pos && px(pos.lat, pos.lon);
     if (me) fits(me.x - 10, me.y, 60);
-    for (const l of [...items].sort((a, b) => a.dist - b.dist)) {
+    for (const l of [...shownItems()].sort((a, b) => a.dist - b.dist)) {
       const p = px(l.lat, l.lon);
       if (p.x < -20 || p.y < -20 || p.x > W + 20 || p.y > H + 20) continue;
       dot(g, p, 7, COLOR[l.tipo]);

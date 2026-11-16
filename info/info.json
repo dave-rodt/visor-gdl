@@ -622,5 +622,31 @@
   ],
   "texto_en": "Mexico City is the capital and largest city of Mexico, as well as the most populous city in North America. It is one of the world's leading cultural and financial centers and, according to the Globalization and World Cities Research Network's 2024 ranking, is classified as an Alpha world city. Located in the Valley of Mexico on the high Mexican Central Plateau, the city sits at an altitude of 2,240 meters. It is divided into 16 boroughs, or alcaldías, which are further subdivided into neighborhoods, or colonias.",
   "url_en": "https://en.wikipedia.org/wiki/Mexico_City"
+ },
+ "Bosque de la Primavera": {
+  "texto": "El bosque La Primavera es una amplia zona forestal, que alberga en su interior una caldera volcánica con un IEV de 6.4. Se ubica en México, en el Estado de Jalisco. Comparte extensión territorial con los municipios de Tala, El Arenal, Zapopan y Tlajomulco de Zúñiga. También conocido como el pulmón de la Zona Metropolitana de Guadalajara. Desde 1934 fue declarado zona forestal protegida, en 1980 se declaró una zona de Protección Forestal y Refugio de la Fauna Silvestre, por el presidente José López Portillo. Y en el 2000 adquirió la categoría de Área de Protección de Flora y Fauna.",
+  "url": "https://es.wikipedia.org/wiki/Bosque_de_la_Primavera",
+  "fotos": [
+   {
+    "src": "info/img/cerro-el-tajo-1.jpg",
+    "autor": "Mexikansi72",
+    "licencia": "CC0",
+    "fuente": "https://commons.wikimedia.org/wiki/File:Bosque_de_la_Primavera,_Jalisco.jpg"
+   },
+   {
+    "src": "info/img/cerro-el-tajo-2.jpg",
+    "autor": "YoLoL",
+    "licencia": "CC BY-SA 4.0",
+    "fuente": "https://commons.wikimedia.org/wiki/File:SAM_3755.JPG"
+   },
+   {
+    "src": "info/img/cerro-el-tajo-3.jpg",
+    "autor": "Cochibamba",
+    "licencia": "CC BY-SA 4.0",
+    "fuente": "https://commons.wikimedia.org/wiki/File:Arroyo_las_Tortugas.jpg"
+   }
+  ],
+  "texto_en": "La Primavera Biosphere Reserve, also known as La Primavera Flora and Fauna Protection Area, is a protected natural area in western Mexico. It is located in the state of Jalisco, immediately west of the city of Guadalajara.",
+  "url_en": "https://en.wikipedia.org/wiki/La_Primavera_Biosphere_Reserve"
  }
 }

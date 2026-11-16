@@ -1,7 +1,7 @@
 // Run: node check.mjs   (fails loudly if the geometry breaks)
 import assert from "node:assert/strict";
 import { angleSpread, distBearing, elevAngle, dirVector, cameraBasis, headingPitch, project, destination, rayMax, tiltBasis, solveCalibration, skyEdges, matchSkyline, withTowers } from "./geo.js";
-import { LANDMARKS, PERFILES } from "./landmarks.js";
+import { LANDMARKS, PADEL, TORRES, PERFILES } from "./landmarks.js";
 import { STR } from "./i18n.js";
 
 
@@ -129,5 +129,12 @@ for (const l of LANDMARKS) {
   if (l.tipo === "e") assert.ok(PERFILES[l.perfil], `${l.nombre} perfil`);
   if (l.tipo === "e") assert.ok(l.h > 0 && l.h < 300 && l.w > 0 && l.w < 400, `${l.nombre} h/w`);
 }
+
+// Camera-only towers: inside the metro area, plausible size.
+for (const [i, l] of TORRES.entries()) assert.ok(l.lat > 20.45 && l.lat < 20.85 && l.lon > -103.6 && l.lon < -103.2 && l.h > 40 && l.h < 300 && l.w > 0 && l.w < 200, `tower ${i}`);
+
+// Padel clubs: inside the Guadalajara metro area, no repeated names.
+for (const l of PADEL) assert.ok(l.lat > 20.45 && l.lat < 20.85 && l.lon > -103.6 && l.lon < -103.2, `${l.nombre} coords`);
+assert.equal(new Set(PADEL.map((l) => l.nombre)).size, PADEL.length, "padel names repeat");
 
 console.log(`ok (skyline ${ms.toFixed(0)} ms)`);
